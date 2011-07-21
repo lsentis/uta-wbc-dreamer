@@ -6,6 +6,7 @@
   <review status="unreviewed" notes=""/>
   <url>https://github.org/poftwaresatent/utaustin-wbc</url>
   <depend package="wbc_core"/>
+  <depend package="roscpp"/>
   <export>
     <cpp cflags="-I${prefix}/"
 	 lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lwbc_uta_opspace" />

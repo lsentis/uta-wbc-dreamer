@@ -1,0 +1,40 @@
+- tasks:
+  - type: opspace::CartPosTrjTask
+    name: eepos
+    end_effector_id: 6
+    sigma_threshold: 0.005
+    control_point: [ 0.0, 0.0, 0.0 ]
+    dt_seconds: 0.0025
+    kp: [ 60.0 ]
+    kd: [ 5.0 ]
+    maxvel: [ 0.8 ]
+    maxacc: [ 2.4 ]
+  - type: opspace::JPosTrjTask
+    name: posture
+    sigma_threshold: 0.0001
+    dt_seconds: 0.0025
+    #kp: [ 150.0 ]
+    #kd: [  10.0 ]
+    kp: [ 0.0 ]
+    kd: [ 0.0 ]
+    maxvel: [ 1.0 ]
+    maxacc: [ 3.0 ]
+  - type: opspace::OrientationTask
+    name: eeori
+    end_effector_id: 6
+    kp: 800.0
+    kd: 20.0
+    maxvel: 12.0
+    
+- skills:
+  - type: uta_opspace::TaskPostureSkill
+    name: task_posture
+    eepos: [ 0.30, -0.10, -0.05]
+    eeori_x: [ 1, 0, 0]
+    eeori_y: [ 0, 0, -1 ]
+    eeori_z: [ 0, 1, 0 ]
+    posture: [ 0.15, 0.5, -0.4, 1.95, 1.85, 0.5, -1.0 ]
+    slots:
+      eepos: eepos
+      eeori: eeori
+      posture: posture

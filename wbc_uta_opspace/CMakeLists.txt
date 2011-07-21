@@ -14,4 +14,11 @@ rosbuild_add_library (wbc_uta_opspace
   uta_opspace/ControllerNG.cpp
   uta_opspace/HelloGoodbyeSkill.cpp
   uta_opspace/DelayHistogram.cpp
+  uta_opspace/TaskPostureSkill.cpp
+  uta_opspace/WriteSkill.cpp
+  uta_opspace/LetterManager.cpp
+  uta_opspace/StaticAccuracyTest.cpp
+  uta_opspace/DynamicAccuracyTest.cpp
+  uta_opspace/TrajAccuracyTest.cpp
+  uta_opspace/CircleTest.cpp
   )

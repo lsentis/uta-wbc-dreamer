@@ -49,6 +49,12 @@
 #include <opspace/Factory.hpp>
 #include <uta_opspace/ControllerNG.hpp>
 #include <uta_opspace/HelloGoodbyeSkill.hpp>
+#include <uta_opspace/TaskPostureSkill.hpp>
+#include <uta_opspace/WriteSkill.hpp>
+#include <uta_opspace/StaticAccuracyTest.hpp>
+#include <uta_opspace/DynamicAccuracyTest.hpp>
+#include <uta_opspace/TrajAccuracyTest.hpp>
+#include <uta_opspace/CircleTest.hpp>
 #include <wbc_core/opspace_param_callbacks.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <err.h>
@@ -322,6 +328,14 @@ int main(int argc, char ** argv)
   // file, we need to inform the static type registry about custom
   // additions such as the HelloGoodbyeSkill.
   Factory::addSkillType<uta_opspace::HelloGoodbyeSkill>("uta_opspace::HelloGoodbyeSkill");
+  Factory::addSkillType<uta_opspace::TaskPostureSkill>("uta_opspace::TaskPostureSkill");
+  Factory::addSkillType<uta_opspace::WriteSkill>("uta_opspace::WriteSkill");
+  Factory::addSkillType<uta_opspace::StaticAccuracyTest>("uta_opspace::StaticAccuracyTest");
+  Factory::addSkillType<uta_opspace::DynamicAccuracyTest>("uta_opspace::DynamicAccuracyTest");
+  Factory::addSkillType<uta_opspace::TrajAccuracyTest>("uta_opspace::TrajAccuracyTest");
+  Factory::addSkillType<uta_opspace::CircleTest>("uta_opspace::CircleTest");
+
+  
   
   ros::init(argc, argv, "wbc_m3_ctrl_servo", ros::init_options::NoSigintHandler);
   parse_options(argc, argv);

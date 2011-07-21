@@ -1,0 +1,48 @@
+- tasks:
+  - type: opspace::CartPosTrjTask
+    name: eepos
+    end_effector_id: 6
+    sigma_threshold: 0.005
+    control_point: [ 0.0, 0.0, 0.0 ]
+    dt_seconds: 0.0025
+    kp: [ 100.0 ]
+    kd: [ 15.0 ]
+    maxvel: [ 0.5 ]
+    maxacc: [ 1.5 ]
+  - type: opspace::JPosTrjTask
+    name: posture
+    sigma_threshold: 0.0001
+    dt_seconds: 0.0025
+    kp: [ 150.0 ]
+    kd: [  10.0 ]
+    #kp: [ 0.0 ]
+    #kd: [ 0.0 ]
+    maxvel: [ 1.0 ]
+    maxacc: [ 3.0 ]
+  - type: opspace::OrientationTask
+    name: eeori
+    end_effector_id: 6
+    kp: 800.0
+    kd: 20.0
+    maxvel: 12.0
+    
+- skills:
+  - type: uta_opspace::WriteSkill
+    name: write_skill
+    letters: A
+    letter_centers: [ 0.40, -0.20, 0.00 ]
+#                     0.40, -0.20, 0.00,
+#		      0.40, -0.20, 0.00,
+#		      0.40, -0.20, 0.00,
+#		      0.40, -0.20, 0.00 ]
+    eeori_x: [ 1, 0,  0 ]
+    eeori_y: [ 0, 0, -1 ]
+    eeori_z: [ 0, 1,  0 ]
+    posture: [ 0.15, 0.50, -0.40, 1.95, 1.85, 0.50, -1.00 ]
+    threshold: 0.04
+    scale: 1.0
+    file_name: config/letter_database.yaml #assumes you are operating from wbc_m3_ctrl dir
+    slots:
+      eepos: eepos
+      eeori: eeori
+      posture: posture

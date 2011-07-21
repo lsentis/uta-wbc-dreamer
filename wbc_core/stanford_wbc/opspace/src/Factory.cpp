@@ -49,6 +49,7 @@ namespace opspace {
     Factory::addTaskType<opspace::JointLimitTask>("opspace::JointLimitTask");
     Factory::addTaskType<opspace::OrientationTask>("opspace::OrientationTask");
     Factory::addTaskType<opspace::DraftPIDTask>("opspace::DraftPIDTask");
+    Factory::addTaskType<opspace::TestPurePosTask>("opspace::TestPurePosTask");
 
     Factory::addSkillType<opspace::GenericSkill>("opspace::GenericSkill");
     Factory::addSkillType<opspace::TaskPostureSkill>("opspace::TaskPostureSkill");

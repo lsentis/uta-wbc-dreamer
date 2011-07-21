@@ -50,7 +50,7 @@ namespace opspace {
   {
     bool ok(true);
 
-    {
+    { 
       std::ostringstream msg;
       msg << "missing non-optional task instances:\n";
       for (slot_map_t::const_iterator is(slot_map_.begin()); is != slot_map_.end(); ++is) {
@@ -64,7 +64,7 @@ namespace opspace {
 	return Status(false, msg.str());
       }
     }
-    
+   
     {
       std::ostringstream msg;
       msg << "failed task initializations:\n";
@@ -83,7 +83,6 @@ namespace opspace {
 	return Status(false, msg.str());
       }
     }
-    
     return Status();
   }
   

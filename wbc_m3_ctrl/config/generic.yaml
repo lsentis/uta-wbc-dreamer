@@ -6,7 +6,7 @@
     kd: [  5.0 ]
     maxvel: [ 10.0 ]
 
-- behaviors:
+- skills:
   - type: opspace::GenericBehavior
     name: generic
     slots:

@@ -1,11 +1,19 @@
 - tasks:
-  - type: opspace::OrientationTask
-    name: eeori_shake
-    end_effector_id: 6
-    sigma_threshold: 0.01
-    kp: 800.0
-    kd: 20.0
-    maxvel: 12.0
+  - type: opspace::JPosTrjTask
+    name: posture_init
+    sigma_threshold: 0.0001
+    dt_seconds: 0.0025
+    kp: [ 150.0, 150.0, 150.0, 150.0, 300.0, 150.0, 150.0 ]
+    kd: [  10.0 ]
+    maxvel: [ 3.0 ]
+    maxacc: [ 6.0 ]
+#  - type: opspace::OrientationTask
+#    name: eeori_shake
+#    end_effector_id: 6
+#    sigma_threshold: 0.01
+#    kp: 800.0
+#    kd: 15.0
+#    maxvel: 12.0
   - type: opspace::CartPosTrjTask
     name: eepos_shake
     end_effector_id: 6
@@ -13,14 +21,14 @@
     control_point: [ 0.0, 0.0, 0.0 ]
     dt_seconds: 0.0025
     kp: [ 60.0 ]
-    kd: [ 12.0 ]
+    kd: [  5.0 ]
     maxvel: [ 0.8 ]
     maxacc: [ 2.4 ]
   - type: opspace::JPosTrjTask
     name: posture_shake
     sigma_threshold: 0.0001
     dt_seconds: 0.0025
-    kp: [ 150.0 ]
+    kp: [ 150.0, 150.0, 150.0, 150.0, 300.0, 150.0, 150.0 ]
     kd: [  10.0 ]
     maxvel: [ 1.0 ]
     maxacc: [ 6.0 ]
@@ -30,7 +38,7 @@
     sigma_threshold: 0.005
     control_point: [ 0.0, 0.0, 0.0 ]
     dt_seconds: 0.0025
-    kp: [ 25.0 ]
+    kp: [ 60.0 ]
     kd: [  5.0 ]
     maxvel: [ 0.8 ]
     maxacc: [ 2.4 ]
@@ -38,7 +46,7 @@
     name: posture_wave
     sigma_threshold: 0.0001
     dt_seconds: 0.0025
-    kp: [ 150.0 ]
+    kp: [ 150.0, 150.0, 150.0, 150.0, 300.0, 150.0, 150.0 ]
     kd: [  10.0 ]
     maxvel: [ 1.0 ]
     maxacc: [ 6.0 ]
@@ -46,7 +54,17 @@
 - skills:
   - type: uta_opspace::HelloGoodbyeSkill
     name: hello_goodbye
+    init_jpos:      [ 0.5, 0.3, -0.135, 1.325, 1.665, -0.075, -0.105 ]
+    init_jdist_threshold: 0.3
+    shake_position: [ 0.32, -0.20, -0.3 ]
+    shake_distance_threshold: 0.06
+    shake_count_threshold: 600
+    wave_position_left:   [ 0.30, -0.12, 0.17 ]
+    wave_position_right:  [ 0.30, -0.33, 0.17 ]
+    wave_distance_threshold: 0.1
+    wave_count_threshold: 6
     slots:
+      init_jpos: posture_init
       # shake_orientation: eeori_shake
       shake_position: eepos_shake
       shake_posture: posture_shake

@@ -27,6 +27,7 @@
 #define OPSPACE_TASK_LIBRARY_HPP
 
 #include <opspace/Task.hpp>
+#include <ros/ros.h>
 
 namespace opspace {
   
@@ -186,15 +187,15 @@ namespace opspace {
     virtual Status check(std::string const * param, std::string const & value) const;
     
     inline void quickSetup(Vector const & kp, Vector const & kd, Vector const & maxvel,
-			   std::string const & name, Vector const & control_point)
+			   int const & id, Vector const & control_point)
     {
       PDTask::quickSetup(kp, kd, maxvel);
-      end_effector_name_ = name;
+      end_effector_id_ = id;
       control_point_ = control_point;
     }
     
   protected:
-    std::string end_effector_name_;
+    int end_effector_id_;
     Vector control_point_;
     
     mutable taoDNode const * end_effector_node_;
@@ -432,6 +433,11 @@ namespace opspace {
     taoDNode const * updateActual(Model const & model);
     
     //    Vector goal_;		// direction cosines
+    //// Added to allow goal changes
+    Vector vgoal_x;
+    Vector vgoal_y;
+    Vector vgoal_z;
+    ////
     Eigen::Vector3d goal_x_;
     Eigen::Vector3d goal_y_;
     Eigen::Vector3d goal_z_;
@@ -447,7 +453,35 @@ namespace opspace {
     Vector eepos_;		// just for logging...
   };
 
-  
+  class TestPurePosTask
+    : public Task
+  {
+  public:
+    explicit TestPurePosTask(std::string const & name);
+
+    virtual Status init(Model const & model);
+    virtual Status update(Model const & model);
+
+    virtual void dbg(std::ostream & os,
+		     std::string const & title,
+		     std::string const & prefix) const;
+
+  protected:
+    virtual taoDNode const * updateActual(Model const & model);
+
+    int end_effector_id_;
+    double kp_;
+    double kd_;
+    ros::Time start_time_;
+    Vector control_point_;
+    mutable taoDNode const * end_effector_node_;
+    Vector center_position_;
+    double radius_;
+    double omega_;
+  };
+
+
+
 }
 
 #endif // OPSPACE_TASK_LIBRARY_HPP
