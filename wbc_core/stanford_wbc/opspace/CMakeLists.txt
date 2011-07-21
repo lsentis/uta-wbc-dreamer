@@ -30,3 +30,6 @@ if (HAVE_GTEST)
   target_link_libraries (testFactory opspace gtest pthread)
 
 endif (HAVE_GTEST)
+
+add_executable (checkSkillFile src/checkSkillFile.cpp)
+target_link_libraries (checkSkillFile opspace)

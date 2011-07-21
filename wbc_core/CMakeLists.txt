@@ -88,3 +88,6 @@ rosbuild_add_library (wbc_core
   
   src/opspace_param_callbacks.cpp
   )
+
+rosbuild_add_executable (checkSkillFile stanford_wbc/opspace/src/checkSkillFile.cpp)
+target_link_libraries (checkSkillFile wbc_core)
