@@ -81,6 +81,29 @@ namespace opspace {
     task_table_t task_table_;
   };
 
+ class CircleTest
+    : public Skill
+  {
+  public:
+    CircleTest(std::string const & name);
+    
+    virtual Status init(Model const & model);
+    virtual Status update(Model const & model);
+    virtual task_table_t const * getTaskTable();
+    virtual Status checkJStarSV(Task const * task, Vector const & sv);
+    
+    void dbg(std::ostream & os,
+	     std::string const & title,
+	     std::string const & prefix) const;
+    
+  protected:
+    SelectedJointPostureTask * posture_task_;
+    TestPurePosTask * goal_eepos_task_;
+    task_table_t goal_task_table_;
+
+  };
+
+
 }
 
 #endif // OPSPACE_SKILL_LIBRARY_HPP

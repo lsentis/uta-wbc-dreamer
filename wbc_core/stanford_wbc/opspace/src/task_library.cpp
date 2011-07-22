@@ -1240,6 +1240,8 @@ namespace opspace {
     if (0 == updateActual(model)) {
       return Status(false, "updateActual() failed, did you specify a valid end_effector_id?");
     }
+    Status ok;
+    return ok;
    }
 
   Status TestPurePosTask::
