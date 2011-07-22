@@ -28,7 +28,7 @@
     name: posture_shake
     sigma_threshold: 0.0001
     dt_seconds: 0.0025
-    kp: [ 150.0, 150.0, 150.0, 150.0, 300.0, 150.0, 150.0 ]
+    kp: [ 150.0 ]
     kd: [  10.0 ]
     maxvel: [ 1.0 ]
     maxacc: [ 6.0 ]
@@ -46,7 +46,7 @@
     name: posture_wave
     sigma_threshold: 0.0001
     dt_seconds: 0.0025
-    kp: [ 150.0, 150.0, 150.0, 150.0, 300.0, 150.0, 150.0 ]
+    kp: [ 150.0 ]
     kd: [  10.0 ]
     maxvel: [ 1.0 ]
     maxacc: [ 6.0 ]

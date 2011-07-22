@@ -27,7 +27,6 @@
 #define OPSPACE_TASK_LIBRARY_HPP
 
 #include <opspace/Task.hpp>
-#include <ros/ros.h>
 
 namespace opspace {
   
@@ -472,7 +471,7 @@ namespace opspace {
     int end_effector_id_;
     double kp_;
     double kd_;
-    ros::Time start_time_;
+    int time_;
     Vector control_point_;
     mutable taoDNode const * end_effector_node_;
     Vector center_position_;

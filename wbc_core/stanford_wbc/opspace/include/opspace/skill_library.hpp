@@ -80,7 +80,7 @@ namespace opspace {
     JPosTrjTask * posture_;
     task_table_t task_table_;
   };
-  
+
 }
 
 #endif // OPSPACE_SKILL_LIBRARY_HPP

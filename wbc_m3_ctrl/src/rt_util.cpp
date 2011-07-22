@@ -74,11 +74,7 @@ namespace wbc_m3_ctrl {
     jspace::Vector command(7);
     RTIME tick_period;
     int cb_status;
-
-    //Force-Torque Sensor
-    jspace::Vector f_t_sensor(6);
-    bool ft = false;
-    ///
+    jspace::Vector sensor(6);
     
     //////////////////////////////////////////////////
     // Initialize shared memory, RT task, and semaphores.
@@ -133,10 +129,7 @@ namespace wbc_m3_ctrl {
 	
     ///Force-Torque Sensor
     for (size_t jj(0); jj < 6; ++jj) {
-	f_t_sensor[jj] = 1.0e-3 * shm_status.right_arm.wrench[jj];
-    }
-    if (ft) {
-    	fprintf(stderr, "FT %f %f %f %f %f %f",f_t_sensor[0],f_t_sensor[1],f_t_sensor[2],f_t_sensor[3],f_t_sensor[4],f_t_sensor[5]);
+	sensor[jj] = 1.0e-3 * shm_status.right_arm.wrench[jj];
     }
     ///	
 
@@ -180,11 +173,8 @@ namespace wbc_m3_ctrl {
 
      ///Force-Torque Sensor
       for (size_t jj(0); jj < 6; ++jj) {
-	f_t_sensor[jj] = 1.0e-3 * shm_status.right_arm.wrench[jj];
+	sensor[jj] = 1.0e-3 * shm_status.right_arm.wrench[jj];
       }
-      if (ft){
-      fprintf(stderr, "FT %f %f %f %f %f %f\n",f_t_sensor[0],f_t_sensor[1],f_t_sensor[2],f_t_sensor[3],f_t_sensor[4],f_t_sensor[5]);
-	}
      ///
 
       cb_status = rtutil->update(state, command);

@@ -1202,6 +1202,7 @@ namespace opspace {
   TestPurePosTask::TestPurePosTask(std::string const & name)
     : Task(name),
       end_effector_id_(-1),
+      time_(0),
       kp_(-1),
       kd_(-1),
       control_point_(Vector::Zero(3)),
@@ -1210,8 +1211,6 @@ namespace opspace {
       radius_(-1),
       omega_(-1)
   {
-    ros::start();
-    start_time_ = ros::Time::now();
     declareParameter("end_effector", &end_effector_id_, PARAMETER_FLAG_NOLOG);
     declareParameter("kp", &kp_, PARAMETER_FLAG_NOLOG);
     declareParameter("kd", &kd_, PARAMETER_FLAG_NOLOG);
@@ -1255,7 +1254,8 @@ namespace opspace {
     Vector v_des(Vector::Zero(3));
     Vector x_des(center_position_);
 
-    double t = (ros::Time::now()-start_time_).toSec();
+    double t = time_*1e-3;
+    time_++;
 
     a_des[1] = -radius_ * pow(omega_,2) * cos(omega_*t);
     a_des[2] = -radius_ * pow(omega_,2) * sin(omega_*t);

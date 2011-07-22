@@ -2,7 +2,9 @@ cmake_minimum_required (VERSION 2.4.6)
 include ($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
 set (CMAKE_VERBOSE_MAKEFILE ON)
-set (ROS_BUILD_TYPE Release)
+set (CMAKE_BUILD_TYPE Debug)
+#set (ROS_BUILD_TYPE Release)
+set (ROS_BUILD_TYPE Debug)
 
 add_definitions (-Wall -pipe)
 rosbuild_init ()

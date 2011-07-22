@@ -75,6 +75,8 @@ namespace uta_opspace {
     Parameter * init_jpos_goal_;
     Parameter * shake_eepos_goal_;
     Parameter * wave_eepos_goal_;
+    //Parameter * shake_posture_goal_;
+    //Parameter * wave_posture_goal_;
     
     Vector init_jpos_;
     double init_jdist_;

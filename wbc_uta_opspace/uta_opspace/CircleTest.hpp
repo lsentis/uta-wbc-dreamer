@@ -28,7 +28,6 @@
 
 #include <opspace/Skill.hpp>
 #include <opspace/task_library.hpp>
-#include <ros/ros.h>
 
 namespace uta_opspace {
   
