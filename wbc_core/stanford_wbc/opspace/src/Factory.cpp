@@ -50,10 +50,13 @@ namespace opspace {
     Factory::addTaskType<opspace::OrientationTask>("opspace::OrientationTask");
     Factory::addTaskType<opspace::DraftPIDTask>("opspace::DraftPIDTask");
     Factory::addTaskType<opspace::TestPurePosTask>("opspace::TestPurePosTask");
+    Factory::addTaskType<opspace::TestVarGainCartPosTask>("opspace::TestVarGainCartPosTask");
 
     Factory::addSkillType<opspace::GenericSkill>("opspace::GenericSkill");
     Factory::addSkillType<opspace::TaskPostureSkill>("opspace::TaskPostureSkill");
     Factory::addSkillType<opspace::TaskPostureTrjSkill>("opspace::TaskPostureTrjSkill");
+    Factory::addSkillType<opspace::TwoTaskSkill>("opspace::TwoTaskSkill");
+    Factory::addSkillType<opspace::ThreeTaskSkill>("opspace::ThreeTaskSkill");
   }
   
   

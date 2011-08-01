@@ -22,16 +22,16 @@
     dt_seconds: 0.0025
     kp: [ 60.0 ]
     kd: [  5.0 ]
-    maxvel: [ 0.8 ]
-    maxacc: [ 2.4 ]
+    maxvel: [ 1.2 ]
+    maxacc: [ 3.0 ]
   - type: opspace::JPosTrjTask
     name: posture_shake
     sigma_threshold: 0.0001
     dt_seconds: 0.0025
-    kp: [ 150.0 ]
+    kp: [ 300.0 ]
     kd: [  10.0 ]
-    maxvel: [ 1.0 ]
-    maxacc: [ 6.0 ]
+    maxvel: [ 4.0 ]
+    maxacc: [ 10.0 ]
   - type: opspace::CartPosTrjTask
     name: eepos_wave
     end_effector_id: 6
@@ -40,16 +40,16 @@
     dt_seconds: 0.0025
     kp: [ 60.0 ]
     kd: [  5.0 ]
-    maxvel: [ 0.8 ]
-    maxacc: [ 2.4 ]
+    maxvel: [ 1.2 ]
+    maxacc: [ 3.0 ]
   - type: opspace::JPosTrjTask
     name: posture_wave
     sigma_threshold: 0.0001
     dt_seconds: 0.0025
-    kp: [ 150.0 ]
+    kp: [ 300.0 ]
     kd: [  10.0 ]
-    maxvel: [ 1.0 ]
-    maxacc: [ 6.0 ]
+    maxvel: [ 4.0 ]
+    maxacc: [ 10.0 ]
 
 - skills:
   - type: uta_opspace::HelloGoodbyeSkill

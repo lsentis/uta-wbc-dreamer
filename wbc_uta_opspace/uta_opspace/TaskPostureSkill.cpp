@@ -19,11 +19,11 @@ namespace uta_opspace {
       eeori_goal_y_(0),
       eeori_goal_z_(0),
       posture_goal_(0),
-      eepos_(0),
-      eeori_x_(0),
-      eeori_y_(0),
-      eeori_z_(0),
-      posture_(0)
+      eepos_(Vector::Zero(3)),
+      eeori_x_(Vector::Zero(3)),
+      eeori_y_(Vector::Zero(3)),
+      eeori_z_(Vector::Zero(3)),
+      posture_(Vector::Zero(7))
     {
     declareSlot("eepos", &eepos_task_);
     declareSlot("eeori", &eeori_task_);
@@ -117,11 +117,11 @@ namespace uta_opspace {
      if (! st) {
        return st;
      }
-
+     
      st = posture_goal_->set(posture_);
      if (! st) {
        return st;
-     }     
+       }     
 
  
 

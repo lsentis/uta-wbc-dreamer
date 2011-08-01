@@ -127,11 +127,11 @@ namespace wbc_m3_ctrl {
       state.force_[ii] = 1.0e-3 * shm_status.right_arm.torque[ii];
     }
 	
-    ///Force-Torque Sensor
+    /* ///Force-Torque Sensor
     for (size_t jj(0); jj < 6; ++jj) {
 	sensor[jj] = 1.0e-3 * shm_status.right_arm.wrench[jj];
     }
-    ///	
+    ///*/	
 
     cb_status = rtutil->init(state);
     if (0 != cb_status) {
@@ -171,11 +171,11 @@ namespace wbc_m3_ctrl {
 	state.velocity_[ii] = M_PI * shm_status.right_arm.thetadot[ii] / 180.0;
       }
 
-     ///Force-Torque Sensor
+      /* ///Force-Torque Sensor
       for (size_t jj(0); jj < 6; ++jj) {
 	sensor[jj] = 1.0e-3 * shm_status.right_arm.wrench[jj];
       }
-     ///
+      ///*/
 
       cb_status = rtutil->update(state, command);
       if (0 != cb_status) {

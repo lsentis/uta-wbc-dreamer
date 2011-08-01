@@ -1305,4 +1305,90 @@ namespace opspace {
   {
   }
 
+  TestVarGainCartPosTask::
+  TestVarGainCartPosTask(std::string const & name)
+    : Task(name),
+      end_effector_id_(-1),
+      kp_(Vector::Zero(3)),
+      kd_(Vector::Zero(3)),
+      control_point_(Vector::Zero(3)),
+      end_effector_node_(0),
+      goalpos_(Vector::Zero(3)),
+      goalvel_(Vector::Zero(3))
+  {
+    declareParameter("end_effector", &end_effector_id_ );
+    declareParameter("kp", &kp_);
+    declareParameter("kd", &kd_);
+    declareParameter("control_point",&control_point_);
+    declareParameter("goalpos",&goalpos_);
+    declareParameter("goalvel",&goalvel_);
+  }
+
+  Status TestVarGainCartPosTask::
+  init(Model const & model) {
+    if (0 > end_effector_id_) {
+      return Status(false, "you did not (correctly) set end_effector_id");
+    }
+    if (3 != control_point_.rows()) {
+      return Status(false, "control_point needs to be three dimensional");
+    }
+    if (0 == updateActual(model)) {
+      return Status(false, "updateActual() failed, did you specify a valid end_effector_id?");
+    }
+    Status ok;
+    return ok;
+  }
+
+
+  Status TestVarGainCartPosTask::
+  update(Model const & model) {
+    end_effector_node_ = updateActual(model);
+    if ( ! end_effector_node_) {
+      return Status(false, "invalid end_effector");
+    }
+
+    Vector vel(jacobian_*model.getState().velocity_);
+    command_ = Vector(kp_.cwise()*(goalpos_ - actual_) + kd_.cwise()*(goalvel_ - vel));
+
+    Status ok;
+    return ok;
+  }
+
+  void TestVarGainCartPosTask::
+  dbg(std::ostream & os,std::string const & title,std::string const & prefix) const {
+    if ( ! title.empty()) {
+      os << title << "\n";
+    }
+    os << prefix << "Var Gain Cart Pos Task: `" << instance_name_ << "'\n";
+
+    pretty_print(actual_, os, prefix + "  actual", prefix + "    ");
+    pretty_print(goalpos_, os, prefix + "  goalpos", prefix + "    ");
+    pretty_print(jacobian_, os, prefix + "  jacobian", prefix + "    ");
+    pretty_print(command_, os, prefix + "  command", prefix + "    ");
+  }
+
+  taoDNode const * TestVarGainCartPosTask::
+  updateActual(Model const & model) {
+    if ( ! end_effector_node_) {
+      end_effector_node_ = model.getNode(end_effector_id_);
+    }
+    if (end_effector_node_) {
+      jspace::Transform ee_transform;
+      model.computeGlobalFrame(end_effector_node_,
+			       control_point_[0],
+			       control_point_[1],
+			       control_point_[2],
+			       ee_transform);
+      actual_ = ee_transform.translation();
+
+      Matrix Jfull;
+      if ( ! model.computeJacobian(end_effector_node_, actual_[0], actual_[1], actual_[2], Jfull)) {
+	return 0;
+      }
+      jacobian_ = Jfull.block(0, 0, 3, Jfull.cols());
+    }
+    return end_effector_node_;
+  }
+
+
 }

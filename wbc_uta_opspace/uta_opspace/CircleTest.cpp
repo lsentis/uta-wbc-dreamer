@@ -25,9 +25,7 @@
 
 #include "CircleTest.hpp"
 #include <opspace/task_library.hpp>
-
-using boost::shared_ptr;
-
+#include <ros/ros.h>
 
 namespace uta_opspace {
 
@@ -71,6 +69,8 @@ namespace uta_opspace {
 	return st;
       }
     }    
+    jspace::Vector actual(goal_eepos_task_->getActual());
+    ROS_ERROR("%f %f %f",actual[0],actual[1],actual[2]);
     return st;
   }
   

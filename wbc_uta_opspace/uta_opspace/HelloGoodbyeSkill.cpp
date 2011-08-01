@@ -44,8 +44,6 @@ namespace uta_opspace {
       init_jpos_goal_(0),
       shake_eepos_goal_(0),
       wave_eepos_goal_(0),
-      //shake_posture_goal_(0),
-      //wave_posture_goal_(0),
       init_jdist_threshold_(-1),
       shake_distance_threshold_(-1),
       shake_count_threshold_(-1),
@@ -110,21 +108,7 @@ namespace uta_opspace {
       st.errstr = "no appropriate goal parameter in wave position task";
       return st;
     }
-    /*
-    shake_posture_goal_ = shake_posture_task_->lookupParameter("trjgoal", PARAMETER_TYPE_VECTOR);
-    if ( ! shake_posture_goal_) {
-      st.ok = false;
-      st.errstr = "no appropriate goal parameter in shake posture task";
-      return st;
-    }
-    
-    wave_posture_goal_ = wave_posture_task_->lookupParameter("trjgoal", PARAMETER_TYPE_VECTOR);
-    if ( ! wave_posture_goal_) {
-      st.ok = false;
-      st.errstr = "no appropriate goal parameter in wave posture task";
-      return st;
-    }
-    */  
+ 
     //////////////////////////////////////////////////
     // init task tables
     
@@ -192,19 +176,7 @@ namespace uta_opspace {
     if ( ! st) {
       return st;
     }
-    /*
-   st = shake_posture_goal_->set(init_jpos_);
-    if ( ! st) {
-      return st;
-    }
-
-   st = wave_posture_goal_->set(init_jpos_);
-    if ( ! st) {
-      return st;
-      }*/
-
-
-    
+ 
     shake_needs_init_ = true;
     
     //////////////////////////////////////////////////
