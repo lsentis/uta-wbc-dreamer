@@ -501,10 +501,55 @@ namespace opspace {
     mutable taoDNode const * end_effector_node_;
     Vector goalpos_;
     Vector goalvel_;
+  };
 
+  class TestCartForcePosTask
+    : public Task
+  {
+  public:
+    explicit TestCartForcePosTask(std::string const & name);
+
+    virtual Status init(Model const & model);
+    virtual Status update(Model const & model);
+    virtual void dbg(std::ostream & os,
+		     std::string const & title,
+		     std::string const & prefix) const;
+
+  protected:
+    virtual taoDNode const * updateActual(Model const & model);
+    int end_effector_id_;
+    Vector kp_;
+    Vector kd_;
+    Vector kf_;
+    mutable taoDNode const * end_effector_node_;
+    Vector selection_;
+    Vector goalpos_;
+    Vector goalforce_;
 
   };
 
+  class TestPureJointTask
+    : public Task
+  {
+  public:
+    explicit TestPureJointTask(std::string const & name);
+
+    virtual Status init(Model const & model);
+    virtual Status update(Model const & model);
+    virtual void dbg(std::ostream & os,
+		     std::string const & title,
+		     std::string const & prefix) const;
+
+  protected:
+    Vector kp_;
+    Vector kd_;
+    Vector selection_;
+    double amplitude_;
+    double omega_;
+    Vector goalpos_;
+
+    int t;
+  };
 
 }
 

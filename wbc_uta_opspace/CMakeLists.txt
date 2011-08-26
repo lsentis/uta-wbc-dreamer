@@ -23,4 +23,6 @@ rosbuild_add_library (wbc_uta_opspace
   uta_opspace/DynamicAccuracyTest.cpp
   uta_opspace/TrajAccuracyTest.cpp
   uta_opspace/CircleTest.cpp
+  uta_opspace/GestureSkill.cpp
+  uta_opspace/JointTest.cpp
   )

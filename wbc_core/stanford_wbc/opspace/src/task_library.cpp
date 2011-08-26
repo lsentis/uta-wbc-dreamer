@@ -1077,7 +1077,10 @@ namespace opspace {
       end_effector_id_(-1),
       kp_(50),
       kd_(5),
-      maxvel_(0.5)
+      maxvel_(0.5),
+      vgoal_x(Vector::Zero(3)),
+      vgoal_y(Vector::Zero(3)),
+      vgoal_z(Vector::Zero(3))
   {
     declareParameter("end_effector_id", &end_effector_id_, PARAMETER_FLAG_NOLOG);
     declareParameter("kp", &kp_, PARAMETER_FLAG_NOLOG);
@@ -1098,13 +1101,16 @@ namespace opspace {
     }
     if ( ! updateActual(model)) {
       return Status(false, "invalid end effector ID or failure to compute Jacobian");
+
     }
-    goal_x_ = actual_x_;
-    goal_y_ = actual_y_;
-    goal_z_ = actual_z_;
-    vgoal_x = goal_x_;
-    vgoal_y = goal_y_;
-    vgoal_z = goal_z_;
+    if ( vgoal_x == Vector::Zero(3) || vgoal_y == Vector::Zero(3) || vgoal_z == Vector::Zero(3) ) {
+	goal_x_ = actual_x_;
+	goal_y_ = actual_y_;
+	goal_z_ = actual_z_;
+	vgoal_x = goal_x_;
+	vgoal_y = goal_y_;
+	vgoal_z = goal_z_;
+    }
     Status ok;
     return ok;
   }
@@ -1390,5 +1396,180 @@ namespace opspace {
     return end_effector_node_;
   }
 
+  TestPureJointTask::
+  TestPureJointTask(std::string const & name)
+    : Task(name),
+      kp_(Vector::Zero(7)),
+      kd_(Vector::Zero(7)),
+      selection_(Vector::Zero(7)),
+      amplitude_(0),
+      omega_(1),
+      goalpos_(Vector::Zero(7))
+  {
+    declareParameter("kp", &kp_);
+    declareParameter("kd", &kd_);
+    declareParameter("selection", &selection_);
+    declareParameter("amplitude", &amplitude_);
+    declareParameter("omega", &omega_);
+    declareParameter("goalpos", &goalpos_);
+  }
+
+  Status TestPureJointTask::
+  init(Model const & model) {
+    jacobian_ = Matrix::Identity(model.getNDOF(), model.getNDOF());
+    actual_ = model.getState().position_;
+    if (selection_.rows() != model.getNDOF() ) {
+      return Status(false, "selection should have the same number of rows as DOF");
+    }
+    if (goalpos_.rows() != model.getNDOF() ) {
+      return Status(false, "goalpos should have the same number of rows as DOF");
+    }
+    Status ok;
+    return ok;
+  }
+
+
+  Status TestPureJointTask::
+  update(Model const & model) {
+    t++;
+    Vector goal(goalpos_);
+    for ( int ii=0; ii<goal.size(); ++ii) {
+      if (selection_[ii]) {
+	goal[ii] = goal[ii] + amplitude_*sin(omega_*t/1000);
+      }
+    }
+
+    actual_ = model.getState().position_;
+    command_ = kp_.cwise()*(goal - actual_) - kd_.cwise()*model.getState().velocity_;
+
+    Status ok;
+    return ok;
+  }
+
+  void TestPureJointTask::
+  dbg(std::ostream & os,std::string const & title,std::string const & prefix) const {
+    if ( ! title.empty()) {
+      os << title << "\n";
+    }
+    os << prefix << "Pure Joint Task: `" << instance_name_ << "'\n";
+
+    pretty_print(actual_, os, prefix + "  actual", prefix + "    ");
+    pretty_print(jacobian_, os, prefix + "  jacobian", prefix + "    ");
+    pretty_print(command_, os, prefix + "  command", prefix + "    ");
+  }
+
+ TestCartForcePosTask::
+  TestCartForcePosTask(std::string const & name)
+    : Task(name),
+      end_effector_id_(-1),
+      kp_(Vector::Zero(3)),
+      kd_(Vector::Zero(3)),
+      kf_(Vector::Zero(3)),
+      end_effector_node_(0),
+      selection_(Vector::Zero(3)),
+      goalpos_(Vector::Zero(3)),
+      goalforce_(Vector::Zero(3))
+  {
+    declareParameter("end_effector", &end_effector_id_ );
+    declareParameter("kp", &kp_);
+    declareParameter("kd", &kd_);
+    declareParameter("kf", &kf_);
+    declareParameter("selection",&selection_);
+    declareParameter("goalpos",&goalpos_);
+    declareParameter("goalforce",&goalforce_);
+  }
+
+  Status TestCartForcePosTask::
+  init(Model const & model) {
+    if (0 > end_effector_id_) {
+      return Status(false, "you did not (correctly) set end_effector_id");
+    }
+    if (selection_.rows() != 3 ) {
+      return Status(false, "selection should have 3 rows");
+    }
+    if (goalpos_.rows() != 3 ) {
+      return Status(false, "goalpos should have 3 rows");
+    }
+    if (goalforce_.rows() != 3 ) {
+      return Status(false, "goalforce should have 3 rows");
+    }
+    if (0 == updateActual(model)) {
+      return Status(false, "updateActual() failed, did you specify a valid end_effector_id?");
+    }
+    Status ok;
+    return ok;
+  }
+
+
+  Status TestCartForcePosTask::
+  update(Model const & model) {
+    end_effector_node_ = updateActual(model);
+    if ( ! end_effector_node_) {
+      return Status(false, "invalid end_effector");
+    }
+    Matrix ainv;
+    if ( ! model.getInverseMassInertia(ainv)) {
+      return Status(false, "failed to get inverse mass inertia");
+    }
+    Matrix lambdainv(jacobian_*ainv*jacobian_.transpose());
+
+    jspace::Transform eetrans;
+    if ( ! model.getGlobalFrame(end_effector_node_,eetrans)) {
+      return Status(false, "failed to get global transform");
+    }
+    Matrix R(eetrans.linear());
+
+    Matrix Sigma(Matrix::Identity(3,3));
+    for (int ii=0; ii<3; ++ii) {
+      Sigma(ii,ii) = selection_(ii);
+    }
+    Matrix Sigmabar(Matrix::Identity(3,3) - Sigma);
+
+    Vector vel(jacobian_*model.getState().velocity_);
+    Vector Fm(Vector(kp_.cwise()*(goalpos_ - actual_) - kd_.cwise()*vel));
+    Vector Fsensor(Vector::Zero(3));
+    for (int jj=0; jj<3; ++jj) {
+      Fsensor[jj] = model.getState().force_[jj];
+    }
+    Vector Fa(Vector(kf_.cwise()*(goalforce_ - Fsensor)));
+
+    command_ = Sigma*Fm + Sigmabar*Fa + lambdainv*Sigmabar*R*Fsensor;
+
+    Status ok;
+    return ok;
+  }
+
+  void TestCartForcePosTask::
+  dbg(std::ostream & os,std::string const & title,std::string const & prefix) const {
+    if ( ! title.empty()) {
+      os << title << "\n";
+    }
+    os << prefix << "Cart Force Pos Task: `" << instance_name_ << "'\n";
+
+    pretty_print(actual_, os, prefix + "  actual", prefix + "    ");
+    pretty_print(goalpos_, os, prefix + "  goalpos", prefix + "    ");
+    pretty_print(goalforce_, os, prefix + "  goalforce", prefix + "    ");
+    pretty_print(jacobian_, os, prefix + "  jacobian", prefix + "    ");
+    pretty_print(command_, os, prefix + "  command", prefix + "    ");
+  }
+
+  taoDNode const * TestCartForcePosTask::
+  updateActual(Model const & model) {
+    if ( ! end_effector_node_) {
+      end_effector_node_ = model.getNode(end_effector_id_);
+    }
+    if (end_effector_node_) {
+      jspace::Transform ee_transform;
+      model.getGlobalFrame(end_effector_node_,ee_transform);
+      actual_ = ee_transform.translation();
+
+      Matrix Jfull;
+      if ( ! model.computeJacobian(end_effector_node_, actual_[0], actual_[1], actual_[2], Jfull)) {
+	return 0;
+      }
+      jacobian_ = Jfull.block(0, 0, 3, Jfull.cols());
+    }
+    return end_effector_node_;
+  }
 
 }

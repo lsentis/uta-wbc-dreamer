@@ -70,11 +70,10 @@ namespace wbc_m3_ctrl {
     RTUtil * rtutil((RTUtil*) arg);
     M3TorqueShmSdsStatus shm_status;
     M3TorqueShmSdsCommand shm_cmd;
-    jspace::State state(7, 7, 7);
+    jspace::State state(7, 7, 6);
     jspace::Vector command(7);
     RTIME tick_period;
     int cb_status;
-    jspace::Vector sensor(6);
     
     //////////////////////////////////////////////////
     // Initialize shared memory, RT task, and semaphores.
@@ -124,14 +123,13 @@ namespace wbc_m3_ctrl {
     for (size_t ii(0); ii < 7; ++ii) { // XXXX to do: hardcoded NDOF
       state.position_[ii] = M_PI * shm_status.right_arm.theta[ii] / 180.0;
       state.velocity_[ii] = M_PI * shm_status.right_arm.thetadot[ii] / 180.0;
-      state.force_[ii] = 1.0e-3 * shm_status.right_arm.torque[ii];
+      //state.force_[ii] = 1.0e-3 * shm_status.right_arm.torque[ii];
     }
 	
-    /* ///Force-Torque Sensor
+    ///Force-Torque Sensor
     for (size_t jj(0); jj < 6; ++jj) {
-	sensor[jj] = 1.0e-3 * shm_status.right_arm.wrench[jj];
-    }
-    ///*/	
+      state.force_[jj] = 1.0e-3 * shm_status.right_arm.wrench[jj];
+    }	
 
     cb_status = rtutil->init(state);
     if (0 != cb_status) {
@@ -171,11 +169,11 @@ namespace wbc_m3_ctrl {
 	state.velocity_[ii] = M_PI * shm_status.right_arm.thetadot[ii] / 180.0;
       }
 
-      /* ///Force-Torque Sensor
+      ///Force-Torque Sensor
       for (size_t jj(0); jj < 6; ++jj) {
-	sensor[jj] = 1.0e-3 * shm_status.right_arm.wrench[jj];
+	state.force_[jj] = 1.0e-3 * shm_status.right_arm.wrench[jj];
       }
-      ///*/
+      ///
 
       cb_status = rtutil->update(state, command);
       if (0 != cb_status) {

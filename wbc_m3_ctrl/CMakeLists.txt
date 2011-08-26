@@ -36,6 +36,7 @@ if (HAVE_M3)
   rosbuild_add_library (wbc_m3_ctrl
     src/rt_util.cpp
     src/udp_util.cpp
+    src/rt_util_dual.cpp
     )
   
   rosbuild_add_executable (test_rt_util src/test_rt_util.cpp)
@@ -58,4 +59,7 @@ if (HAVE_M3)
 
   rosbuild_add_executable (teleop src/teleop.cpp)
   target_link_libraries (teleop wbc_m3_ctrl)
+
+  rosbuild_add_executable (arm_head_servo src/arm_head_servo.cpp)
+  target_link_libraries (arm_head_servo wbc_m3_ctrl)
 endif (HAVE_M3)

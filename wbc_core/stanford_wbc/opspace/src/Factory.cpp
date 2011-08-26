@@ -51,6 +51,8 @@ namespace opspace {
     Factory::addTaskType<opspace::DraftPIDTask>("opspace::DraftPIDTask");
     Factory::addTaskType<opspace::TestPurePosTask>("opspace::TestPurePosTask");
     Factory::addTaskType<opspace::TestVarGainCartPosTask>("opspace::TestVarGainCartPosTask");
+    Factory::addTaskType<opspace::TestCartForcePosTask>("opspace::TestCartForcePosTask");
+    Factory::addTaskType<opspace::TestPureJointTask>("opspace::TestPureJointTask");
 
     Factory::addSkillType<opspace::GenericSkill>("opspace::GenericSkill");
     Factory::addSkillType<opspace::TaskPostureSkill>("opspace::TaskPostureSkill");

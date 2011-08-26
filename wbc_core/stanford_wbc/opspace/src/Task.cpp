@@ -40,6 +40,7 @@ namespace opspace {
     // the Parameter interface...
     declareParameter("actual", &actual_);
     declareParameter("command", &command_);
+    declareParameter("force", &force_);
     // overkill? declareParameter("jacobian", &jacobian_);
   }
   
@@ -55,6 +56,7 @@ namespace opspace {
     pretty_print(actual_, os, prefix + "  actual:", prefix + "    ");
     pretty_print(command_, os, prefix + "  command:", prefix + "    ");
     pretty_print(jacobian_, os, prefix + "  Jacobian:", prefix + "    ");
+    pretty_print(force_, os, prefix + "  force:", prefix + "    ");
   }
   
   

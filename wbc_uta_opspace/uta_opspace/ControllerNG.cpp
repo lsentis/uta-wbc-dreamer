@@ -232,17 +232,22 @@ namespace uta_opspace {
 		    lstar, 0);////&sv_lstar_[ii]);
       Vector pstar;
       pstar = lstar * jstar * ainv * grav; // same would go for coriolis-centrifugal...
+
+      Vector force(task->getForce());
+      if (force.rows() == 0) {
+	force = Vector::Zero(jstar.rows());
+      }
       
       // could add coriolis-centrifugal just like pstar...
       if (ii == first_active_task_index) {
 	// first time around: initialize gamma
-	gamma = jstar.transpose() * (lstar * task->getCommand() + pstar);
+	gamma = jstar.transpose() * (lstar * task->getCommand() + pstar + force);
       }
       else {
 	Vector fcomp;
 	// here, gamma is still at the previous iteration's value
 	fcomp = lstar * jstar * ainv * gamma;
-	gamma += jstar.transpose() * (lstar * task->getCommand() + pstar - fcomp);
+	gamma += jstar.transpose() * (lstar * task->getCommand() + pstar + force - fcomp);
       }
       
       if (ii != n_minus_1) {

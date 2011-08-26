@@ -20,8 +20,8 @@
   - type: opspace::OrientationTask
     name: eeori
     end_effector_id: 6
-    kp: 100.0
-    kd: 20.0
+    kp: 500.0
+    kd: 25.0
     maxvel: 12.0
     
 - skills:

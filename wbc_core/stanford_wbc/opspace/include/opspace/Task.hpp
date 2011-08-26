@@ -146,6 +146,8 @@ namespace opspace {
     */
     Matrix const & getJacobian() const { return jacobian_; }
 
+    Vector const & getForce() const { return force_; }
+
     /**
        SVD cutoff value for pseudo inverse, exists in all tasks
        because Controller implementations need it.
@@ -164,6 +166,7 @@ namespace opspace {
     Vector actual_;
     Vector command_;
     Matrix jacobian_;
+    Vector force_;
     
     /** Parameter "sigma_threshold", SVD cutoff value for pseudo
 	inverse. Exists in all tasks because Controller

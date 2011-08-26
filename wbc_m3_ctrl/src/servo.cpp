@@ -55,6 +55,8 @@
 #include <uta_opspace/DynamicAccuracyTest.hpp>
 #include <uta_opspace/TrajAccuracyTest.hpp>
 #include <uta_opspace/CircleTest.hpp>
+#include <uta_opspace/GestureSkill.hpp>
+#include <uta_opspace/JointTest.hpp>
 #include <wbc_core/opspace_param_callbacks.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <err.h>
@@ -334,7 +336,8 @@ int main(int argc, char ** argv)
   Factory::addSkillType<uta_opspace::DynamicAccuracyTest>("uta_opspace::DynamicAccuracyTest");
   Factory::addSkillType<uta_opspace::TrajAccuracyTest>("uta_opspace::TrajAccuracyTest");
   Factory::addSkillType<uta_opspace::CircleTest>("uta_opspace::CircleTest");
-
+  Factory::addSkillType<uta_opspace::GestureSkill>("uta_opspace::GestureSkill");
+  Factory::addSkillType<uta_opspace::JointTest>("uta_opspace::JointTest");
   
   
   ros::init(argc, argv, "wbc_m3_ctrl_servo", ros::init_options::NoSigintHandler);
