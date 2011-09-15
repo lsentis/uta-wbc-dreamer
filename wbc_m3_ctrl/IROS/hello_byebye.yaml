@@ -1,0 +1,73 @@
+- tasks:
+  - type: opspace::JPosTrjTask
+    name: posture_init
+    sigma_threshold: 0.0001
+    dt_seconds: 0.0025
+    kp: [  50.0 ]
+    kd: [   3.0 ]
+    maxvel: [ 3.0 ]
+    maxacc: [ 6.0 ]
+#  - type: opspace::OrientationTask
+#    name: eeori_shake
+#    end_effector_id: 6
+#    sigma_threshold: 0.01
+#    kp: 800.0
+#    kd: 15.0
+#    maxvel: 12.0
+  - type: opspace::CartPosTrjTask
+    name: eepos_shake
+    end_effector_id: 6
+    sigma_threshold: 0.005
+    control_point: [ 0.0, 0.0, 0.0 ]
+    dt_seconds: 0.0025
+    kp: [ 50.0 ]
+    kd: [  3.0 ]
+    maxvel: [ 1.0 ]
+    maxacc: [ 1.5 ]
+  - type: opspace::JPosTrjTask
+    name: posture_shake
+    sigma_threshold: 0.0001
+    dt_seconds: 0.0025
+    kp: [  50.0 ]
+    kd: [   3.0 ]
+    maxvel: [ 4.0 ]
+    maxacc: [ 10.0 ]
+  - type: opspace::CartPosTrjTask
+    name: eepos_wave
+    end_effector_id: 6
+    sigma_threshold: 0.005
+    control_point: [ 0.0, 0.0, 0.0 ]
+    dt_seconds: 0.0025
+    kp: [ 50.0 ]
+    kd: [  3.0 ]
+    maxvel: [ 1.0 ]
+    maxacc: [ 1.5 ]
+  - type: opspace::JPosTrjTask
+    name: posture_wave
+    sigma_threshold: 0.0001
+    dt_seconds: 0.0025
+    kp: [  50.0 ]
+    kd: [   3.0 ]
+    maxvel: [ 4.0 ]
+    maxacc: [ 10.0 ]
+
+- skills:
+  - type: uta_opspace::HelloGoodbyeSkill
+    name: hello_goodbye
+    init_jpos:      [ 0.5, 0.3, -0.135, 1.325, 1.665, -0.075, -0.105 ]
+    init_jdist_threshold: 0.3
+    shake_position: [ 0.32, -0.20, -0.3 ]
+    shake_distance_threshold: 0.06
+    shake_count_threshold: 600
+    wave_position_left:   [ 0.30, -0.12, 0.17 ]
+    wave_position_right:  [ 0.30, -0.33, 0.17 ]
+    wave_distance_threshold: 0.1
+    wave_count_threshold: 6
+    slots:
+      init_jpos: posture_init
+      # shake_orientation: eeori_shake
+      shake_position: eepos_shake
+      shake_posture: posture_shake
+      wave_position: eepos_wave
+      wave_posture: posture_wave
+      
