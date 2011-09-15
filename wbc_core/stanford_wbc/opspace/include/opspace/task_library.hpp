@@ -551,6 +551,28 @@ namespace opspace {
     int t;
   };
 
+  class TestPureJPosTrajTask
+    : public Task
+  {
+  public:
+    virtual ~TestPureJPosTrajTask();
+    explicit TestPureJPosTrajTask(std::string const & name);
+
+    virtual Status init(Model const & model);
+    virtual Status update(Model const & model);
+    virtual void dbg(std::ostream & os,
+		     std::string const & title,
+		     std::string const & prefix) const;
+    
+    Vector kp_;
+    Vector kd_;
+    TypeIOTGCursor * cursor_;
+    double dt_seconds_;
+    Vector trjgoal_;
+    Vector maxacc_;
+    Vector maxvel_;
+  };
+
 }
 
 #endif // OPSPACE_TASK_LIBRARY_HPP

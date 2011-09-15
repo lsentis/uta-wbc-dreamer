@@ -25,4 +25,7 @@ rosbuild_add_library (wbc_uta_opspace
   uta_opspace/CircleTest.cpp
   uta_opspace/GestureSkill.cpp
   uta_opspace/JointTest.cpp
+  uta_opspace/CoffeeGrindSkill.cpp
+  uta_opspace/Reach.cpp
+  uta_opspace/MultiJointPos.cpp
   )

@@ -163,11 +163,23 @@ namespace uta_opspace {
     
     //////////////////////////////////////////////////
     // the magic nullspace sauce...
-    
-    Matrix ainv;
-    if ( ! model.getInverseMassInertia(ainv)) {
-      return Status(false, "failed to retrieve inverse mass inertia");
+    Vector Irot(Vector::Zero(7));
+    Vector N(Vector::Zero(7));
+
+    Irot(0) = 138; Irot(1) = 138; Irot(2) = 135; Irot(3) = 135; Irot(4) = 35; Irot(5) = 35; Irot(6) =35 ;
+    N(0) = 120; N(1) = 100; N(2) = 100; N(3) = 100; N(4) = 100; N(5) = 50; N(6) = 50;
+
+
+    Matrix a;
+    if ( ! model.getMassInertia(a)) {
+      return Status(false, "failed to retrieve mass inertia");
     }
+
+    for (size_t ii(0); ii<model.getNDOF(); ++ii) {
+      a(ii,ii) = a(ii,ii) + Irot(ii)*pow(N(ii),2)/(1000*pow(100,2));
+    }
+
+    Matrix ainv(a.inverse());
     Vector grav;
     if ( ! model.getGravity(grav)) {
       return Status(false, "failed to retrieve gravity torques");

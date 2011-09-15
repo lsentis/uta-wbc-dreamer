@@ -1572,4 +1572,134 @@ namespace opspace {
     return end_effector_node_;
   }
 
+TestPureJPosTrajTask::
+  TestPureJPosTrajTask(std::string const & name)
+    : Task(name),
+      cursor_(0),
+      dt_seconds_(-1)
+  {
+    declareParameter("kp", &kp_);
+    declareParameter("kd", &kd_);
+    declareParameter("dt_seconds", &dt_seconds_, PARAMETER_FLAG_NOLOG);
+    declareParameter("trjgoal", &trjgoal_);
+    declareParameter("maxacc", &maxacc_, PARAMETER_FLAG_NOLOG);
+    declareParameter("maxvel", &maxvel_, PARAMETER_FLAG_NOLOG);
+  }
+  
+  
+  TestPureJPosTrajTask::
+  ~TestPureJPosTrajTask()
+  {
+    delete cursor_;
+  }
+  
+  
+  Status TestPureJPosTrajTask::
+  init(Model const & model)
+  {
+    Status st;
+    
+    if (0 > dt_seconds_) {
+      st.ok = false;
+      st.errstr = "you did not (correctly) set dt_seconds";
+      return st;
+    }
+    
+    int const ndim(model.getNDOF());
+    if (ndim != maxacc_.rows()) {
+      if ((ndim != 1) && (1 == maxacc_.rows())) {
+	maxacc_ = maxacc_[0] * Vector::Ones(ndim);
+      }
+      else {
+	return Status(false, "invalid maxacc dimension");
+      }
+    }
+
+   if (ndim != maxvel_.rows()) {
+      if ((ndim != 1) && (1 == maxvel_.rows())) {
+	maxvel_ = maxvel_[0] * Vector::Ones(ndim);
+      }
+      else {
+	return Status(false, "invalid maxvel dimension");
+      }
+    }
+
+   if (ndim != kp_.rows()) {
+      if ((ndim != 1) && (1 == kp_.rows())) {
+	kp_ = kp_[0] * Vector::Ones(ndim);
+      }
+      else {
+	return Status(false, "invalid kp dimension");
+      }
+    }
+    
+   if (ndim != kd_.rows()) {
+      if ((ndim != 1) && (1 == kd_.rows())) {
+	kd_ = kd_[0] * Vector::Ones(ndim);
+      }
+      else {
+	return Status(false, "invalid kd dimension");
+      }
+    }
+
+    if (cursor_) {
+      if (cursor_->dt_seconds_ != dt_seconds_) {
+	delete cursor_;
+	cursor_ = 0;
+      }
+    }
+    if ( ! cursor_) {
+      cursor_ = new TypeIOTGCursor(ndim, dt_seconds_);
+    }
+    
+    trjgoal_ = model.getState().position_;
+    cursor_->position() = trjgoal_;
+    cursor_->velocity() = Vector::Zero(ndim);
+
+    jacobian_ = Matrix::Identity(ndim,ndim);
+    
+    return st;
+  }
+  
+  
+  Status TestPureJPosTrajTask::
+  update(Model const & model)
+  {
+    if ( ! cursor_) {
+      return Status(false, "not initialized");
+    }
+    
+    int const trjstatus(cursor_->next(maxvel_, maxacc_, trjgoal_));
+    if (0 > trjstatus) {
+      std::ostringstream msg;
+      msg << "trajectory generation error code "
+	  << trjstatus << ": " << otg_errstr(trjstatus);
+      return Status(false, msg.str());
+    }
+    actual_ = model.getState().position_;
+    command_ = kp_.cwise()*(cursor_->position() - actual_) + kd_.cwise()*(cursor_->velocity() - model.getState().velocity_);
+	Status ok;
+	return ok;
+  }
+ 
+ 
+  void TestPureJPosTrajTask::
+  dbg(std::ostream & os,
+      std::string const & title,
+      std::string const & prefix) const
+  {
+    if ( ! title.empty()) {
+      os << title << "\n";
+    }
+    os << prefix << "trajectory task: `" << instance_name_ << "'\n";
+    if ( ! cursor_) {
+      os << prefix << "  NOT INITIALIZED\n";
+    }
+    else {
+      pretty_print(actual_, os, prefix + "  actual", prefix + "    ");
+      pretty_print(cursor_->position(), os, prefix + "  carrot", prefix + "    ");
+      pretty_print(trjgoal_, os, prefix + "  trjgoal", prefix + "    ");
+    }
+  }
+
 }

@@ -11,7 +11,7 @@ namespace wbc_m3_ctrl {
   public:
     jspace::Status init(jspace::State const & state) {
 	state_ = state;
-	goalpos_ = 0.5 * jspace::Vector::Ones(5);
+	goalpos_ = jspace::Vector::Zero(5);
 	goalpos_[0] = 0;
 	kp_ = 20*jspace::Vector::Ones(5);
 	kd_ = jspace::Vector::Ones(5);
