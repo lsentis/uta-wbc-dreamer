@@ -1,0 +1,14 @@
+- tasks:
+  - type: opspace::PureCartPosTask
+    name: task
+    end_effector: 5
+    kp: [  15.0, 15.0, 15.0 ]
+    kd: [   1.0,  1.0,  1.0 ]
+    control_point: [ 0, 0.0, 0 ]
+    goalpos: [ 0.0, 0.0, 0.0]
+
+- skills:
+  - type: opspace::GenericSkill
+    name: generic
+    slots:
+      task: task

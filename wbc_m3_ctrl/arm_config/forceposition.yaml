@@ -1,0 +1,35 @@
+- tasks:
+  - type: opspace::TestCartForcePosTask
+    name: task
+    end_effector: 6
+    kp: [ 100.0, 100.0, 100.0 ]
+    kd: [  10.0,  10.0,  10.0 ]
+    kf: [   1.0,   1.0,   1.0 ]
+    selection: [ 0, 1, 1]
+    goalpos: [ 0.30, -0.25, 0.0] 
+    goalforce: [ 1, 1, 1]
+  - type: opspace::JPosTrjTask
+    name: posture
+    sigma_threshold: 0.0001
+    dt_seconds: 0.0025
+    kp: [ 0.0 ]
+    kd: [ 0.0 ]
+    maxvel: [ 1.0 ]
+    maxacc: [ 3.0 ] 
+  - type: opspace::OrientationTask
+    name: task2
+    end_effector_id: 6
+    kp: 100.0
+    kd: 20.0
+    maxvel: 12.0
+    goal_x: [ 1, 0, 0]
+    goal_y: [ 0, 0, -1]
+    goal_z: [ 0, 1, 0]
+
+- skills:
+  - type: opspace::ThreeTaskSkill
+    name: threetask
+    slots:
+      task1: task
+      task2: task2
+      task3: posture

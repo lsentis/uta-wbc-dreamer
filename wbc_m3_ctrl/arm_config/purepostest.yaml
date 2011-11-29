@@ -1,0 +1,22 @@
+- tasks:
+  - type: opspace::SelectedJointPostureTask
+    name: posture
+    kp: 80.0
+    kd:  5.0
+    selection: [ 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 ] 
+  - type: opspace::TestPurePosTask
+    name: pure_pos
+    end_effector: 6
+    control_point: [ 0.0, 0.0, 0.0 ]
+    kp:  300.0 
+    kd:   10.0 
+    center_position: [ 0.30,  -0.25, -0.10 ]
+    radius: 0.1
+    omega: 1
+
+- skills:
+  - type: uta_opspace::CircleTest
+    name: circle_test
+    slots:
+      eepos: pure_pos
+      posture: posture

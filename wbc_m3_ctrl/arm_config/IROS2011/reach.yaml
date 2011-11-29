@@ -1,0 +1,32 @@
+- tasks:
+  - type: opspace::PureCartPosTrjTask #Must Match the name of the task in the task_library
+    name: eepos1 #arbitrary name
+    end_effector: 6 #from here below all parameters match the task specification
+    control_point: [ 0.0, -0.05, 0.0 ]
+    dt_seconds : 0.0025
+    kp: [ 100.0 ] #one paramter in brackets means all the paramters take the same value
+    kd: [  4.0 ]
+    maxvel: [ 0.45 ]
+    maxacc: [ 1.5 ]
+  - type: opspace::PureJPosTrjTask
+    name: posture1
+    kp: [ 100.0 ]
+    kd: [  1.0 ]
+    dt_seconds : 0.0025
+    maxvel: [ 1.5 ]
+    maxacc: [ 8.0 ]
+
+- skills:
+  - type: uta_opspace::CartMultiPos #must match name of skill in .cpp
+    name: reach #arbtirary name
+    eepos: [ 0.27, -0.20, -0.45,
+	     0.28, -0.12, -0.10,
+	     0.25,  0.10, -0.10 ]
+    posture: [ 0.10,  0.11, -0.30, 0.72, 0.10, 0.00, 0.00,
+	       0.22,  0.24, -0.42, 2.10, 2.10, 0.00, 0.00,
+	       1.00, -0.33, -1.36, 1.36, 1.97, 0.00, 0.00 ]
+    threshold: 0.05
+    vel_threshold: 0.10
+    slots:
+      eepos: eepos1 # first tag is the factory tag
+      posture: posture1

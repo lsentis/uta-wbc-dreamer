@@ -1,0 +1,32 @@
+- tasks:
+  - type: opspace::PureCartPosTask
+    name: task
+    end_effector: 6
+    #############################
+    # Operational Space Gains
+    kp: [ 100.0, 100.0,   0.0 ] #x,y,z
+    kd: [   3.0,   3.0,   3.0 ]
+    #############################
+    control_point: [ 0, -0.05, 0 ]
+    goalpos: [ 0.30, -0.25, -0.20]
+  - type: opspace::PureJPosTrjTask
+    name: posture
+    sigma_threshold: 0.0001
+    dt_seconds: 0.0025
+    kp: [ 0.0 ]
+    kd: [ 0.0 ]
+    maxvel: [ 1.0 ]
+    maxacc: [ 3.0 ] 
+  - type: opspace::SelectedJointPostureTask
+    name: task2
+    kp:   50.0
+    kd:    3.0
+    selection: [ 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 ] 
+
+- skills:
+  - type: opspace::TwoTaskSkill
+    name: dir_no_gain
+    slots:
+      task1: task
+      task2: task2
+#      task3: posture
