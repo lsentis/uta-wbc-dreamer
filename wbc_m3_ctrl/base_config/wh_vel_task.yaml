@@ -1,9 +1,10 @@
 - tasks:
-  - type: opspace::TestRemoteControlTask
+  - type: opspace::TestRemoteVelControlTask
     name: task
     end_effector: 5
     control_point: [ 0.0, 0.0, 0.0 ]
-    kp: [0.2, 0.2, 0.4]
+    kp: [0.4, 0.4, 1.8]
+    vdes: [0.5, 0.5, 0.5]
 
 - skills:
   - type: opspace::GenericSkill

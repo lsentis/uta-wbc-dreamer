@@ -117,7 +117,8 @@ namespace jspace {
       
       // create tao node
       createTreeOfNodes(nodeID_, linkName_, jointName_, parentNodeID,
-			opID_, type_, axis_, homeF_, mass_, inertia_, com_);
+			opID_, type_, axis_, homeF_, mass_, inertia_, com_,
+			rotorInertia_, gearRatio_, isConstrained_);
 
       // Get joint node child
       TiXmlElement* childJNPtr = getChildJointNode( jointNodePtr->FirstChildElement() );
@@ -147,6 +148,7 @@ namespace jspace {
       string tag = element->Value();
       double x,y,z;
       double val;
+      int intVal;
 
       // reset values
       homeF_.translation().zero();
@@ -283,6 +285,27 @@ namespace jspace {
 	  com_.set((deFloat)x,(deFloat)y,(deFloat)z);
 	}
 
+	// FOUND TAG "rotorInertia":
+	else if ( strcmp( tag.c_str(), "rotorInertia" ) == 0 )  {
+	  const char* str = element->FirstChild()->Value();
+	  sscanf(str, "%lf",&val);
+	  rotorInertia_ = (deFloat)val;
+	}
+
+	// FOUND TAG "gearRatio":
+	else if ( strcmp( tag.c_str(), "gearRatio" ) == 0 )  {
+	  const char* str = element->FirstChild()->Value();
+	  sscanf(str, "%lf",&val);
+	  gearRatio_ = (deFloat)val;
+	}
+
+	// FOUND TAG "constrained":
+	else if ( strcmp( tag.c_str(), "constrained" ) == 0 )  {
+	  const char* str = element->FirstChild()->Value();
+	  sscanf(str, "%d",&intVal);
+	  isConstrained_ = (deInt)intVal;
+	}
+
 	// Move to the next sibling
 	element = element->NextSiblingElement();
 	if( element ) tag = element->Value();
@@ -333,7 +356,10 @@ namespace jspace {
 		      deFrame & homeF,
 		      float mass, 
 		      deVector3 & inertia,
-		      deVector3 & com)
+		      deVector3 & com,
+		      float rotorInertia,
+		      float gearRatio,
+		      int isConstrained)
     {
       // Find parent node
       taoDNode* parentNode = robot_->findNodeID( robot_->rootNode_, parentNodeID );
@@ -351,7 +377,16 @@ namespace jspace {
       tmp_m.get(new_child_node->mass(),new_child_node->center(),new_child_node->inertia());
       new_child_node->setID((deInt) nodeID);
 
-      // Create new joint
+      deFloat* rotorI = new_child_node->rotorInertia();
+      *rotorI = (deFloat) rotorInertia;
+
+      deFloat* gearR = new_child_node->gearRatio();
+      *gearR = (deFloat) gearRatio;
+
+      deInt* constrained = new_child_node->isConstrained();
+      *constrained = (deInt) isConstrained;
+
+       // Create new joint
       taoAxis tmp_axis; 
       if(jointAxis == 'x') tmp_axis = TAO_AXIS_X; 
       else if(jointAxis == 'y') tmp_axis = TAO_AXIS_Y; 

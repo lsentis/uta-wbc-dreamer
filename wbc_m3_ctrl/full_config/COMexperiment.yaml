@@ -1,0 +1,29 @@
+- tasks:
+  - type: opspace::TestRelativeCOMTask
+    name: task
+    end_effector: 2
+    sigma_threshold: 0.01
+    kp: [  25.0 ]
+    kd: [   1.0 ]
+    control_point: [ 0.0, 0.0, 0.0] #-0.1016 ]
+  - type: opspace::SelectedJointPostureTask
+    name: task2
+    selection: [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1 ]
+    kp: [ 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0]
+    kd: [  1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0 ]
+    goalpos: [0.0, 0.0, 0.0, 0.0, 0.0, 1.57, 0.0, 0.0, 0.0]
+  - type: opspace::PureCartPosTask
+    name: base
+    end_effector: 5
+    kp: [   0.5,  0.5,  0.0 ]
+    kd: [  0.05, 0.05,  0.0 ]
+    control_point: [ 0.0, 0.0, 0.0 ]
+    goalpos: [ 0.0, 0.0, 0.0]
+
+- skills:
+  - type: opspace::ThreeTaskSkill
+    name: threetask
+    slots:
+      task1: base
+      task2: task
+      task3: task2

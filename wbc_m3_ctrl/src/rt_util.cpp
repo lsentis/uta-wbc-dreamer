@@ -42,7 +42,8 @@
 #include <rtai_nam2num.h>
 #include <rtai_registry.h>
 
-#include "m3/shared_mem/torque_shm_sds.h"
+//#include "m3/shared_mem/torque_shm_sds.h"
+#include "m3uta/controllers/torque_shm_uta_sds.h"
 #include "m3/robots/chain_name.h"
 #include <m3rt/base/m3ec_def.h>
 #include <m3rt/base/m3rt_def.h>
@@ -68,8 +69,10 @@ namespace wbc_m3_ctrl {
     SEM * status_sem;
     SEM * command_sem;
     RTUtil * rtutil((RTUtil*) arg);
-    M3TorqueShmSdsStatus shm_status;
-    M3TorqueShmSdsCommand shm_cmd;
+    //M3TorqueShmSdsStatus shm_status;
+    //M3TorqueShmSdsCommand shm_cmd;
+    M3UTATorqueShmSdsStatus shm_status;
+    M3UTATorqueShmSdsCommand shm_cmd;
     jspace::State state(7, 7, 6);
     jspace::Vector command(7);
     RTIME tick_period;

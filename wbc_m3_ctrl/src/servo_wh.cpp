@@ -391,15 +391,7 @@ int main(int argc, char ** argv)
 	Vector gravity;
 	model->getGravity(gravity);
 	jspace::pretty_print(gravity, cout, "gravity", "  ");
-	Matrix jstar(controller->getJStar());
-	cout << "J*:\n";
-	for (size_t ii(0); ii < jstar.rows(); ++ii) {
-	  for (size_t jj(0); jj < jstar.cols(); ++jj) {
-	    cout << jstar(ii,jj) << "    ";
-	  }
-	  cout <<"\n";
-	}
-	cout << "\n";
+	jspace::pretty_print(model->getState().remote_command_, cout, "remote", "  ");
 	cout << "servo rate: " << actual_servo_rate << "\n";
       }
     }

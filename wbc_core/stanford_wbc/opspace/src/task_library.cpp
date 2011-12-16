@@ -25,6 +25,7 @@
 
 #include <opspace/task_library.hpp>
 #include <opspace/TypeIOTGCursor.hpp>
+#include <jspace/constraint_library.hpp>
 
 using jspace::pretty_print;
 
@@ -492,7 +493,23 @@ namespace opspace {
   Status JPosTask::
   init(Model const & model)
   {
-    jacobian_ = Matrix::Identity(model.getNDOF(), model.getNDOF());
+    Vector constrained;
+    if (model.getConstrained(constrained)) {
+      int j = -1; int k = -1;
+      jacobian_ = Matrix::Zero(model.getUnconstrainedNDOF(),model.getNDOF());
+      for (size_t ii(0); ii<constrained.rows(); ++ii) {
+	if (constrained[ii] < 0.5) {
+	  j++; k++;
+	  jacobian_(j,k) = 1.0;
+	}
+	else{
+	  k++;
+	}
+      }
+    }
+    else {
+      jacobian_ = Matrix::Identity(model.getNDOF(), model.getNDOF());
+    }
     actual_ = model.getState().position_;
     return initPDTask(model.getState().position_);
   }
@@ -518,19 +535,23 @@ namespace opspace {
     declareParameter("selection", &selection_, PARAMETER_FLAG_NOLOG);
     declareParameter("kp", &kp_, PARAMETER_FLAG_NOLOG);
     declareParameter("kd", &kd_, PARAMETER_FLAG_NOLOG);
+    declareParameter("goalpos", &goalpos_);
   }
   
   
   Status SelectedJointPostureTask::
   init(Model const & model)
   {
+    Vector constrained;
+    model.getConstrained(constrained);
+
     size_t const ndof(model.getNDOF());
     active_joints_.clear();	// in case we get called multiple times
     for (size_t ii(0); ii < selection_.rows(); ++ii) {
-      if (ii >= ndof) {
+      if (ii >= model.getNDOF()) {
 	break;
       }
-      if (selection_[ii] > 0.5) {
+      if (selection_[ii] > 0.5) {// && constrained[ii] < 0.5) {
 	active_joints_.push_back(ii);
       }
     }
@@ -540,11 +561,12 @@ namespace opspace {
     size_t const ndim(active_joints_.size());
     actual_ = Vector::Zero(ndim);
     command_ = Vector::Zero(ndim);
-    jacobian_ = Matrix::Zero(ndim, ndof);
+    jacobian_ = Matrix::Zero(ndim,ndof);
     for (size_t ii(0); ii < ndim; ++ii) {
-      actual_[ii] = model.getState().position_[active_joints_[ii]];
+      actual_[ii] = model.getFullState().position_[active_joints_[ii]];
       jacobian_.coeffRef(ii, active_joints_[ii]) = 1.0;
     }
+
     initialized_ = true;
     Status ok;
     return ok;
@@ -560,12 +582,11 @@ namespace opspace {
       st.errstr = "not initialized";
       return st;
     }
-    Vector vel(actual_.rows());
+    Vector vel(jacobian_ * model.getFullState().velocity_);
     for (size_t ii(0); ii < active_joints_.size(); ++ii) {
-      actual_[ii] = model.getState().position_[active_joints_[ii]];
-      vel[ii] = model.getState().velocity_[active_joints_[ii]];
+      actual_[ii] = model.getFullState().position_[active_joints_[ii]];
     }
-    command_ = -kp_ * actual_ - kd_ * vel;
+    command_ = kp_.cwise() * (goalpos_ - actual_) - kd_.cwise() * vel;
     return st;
   }
   
@@ -574,10 +595,11 @@ namespace opspace {
   check(double const * param, double value) const
   {
     Status st;
+    /*
     if (((&kp_ == param) && (value < 0)) || ((&kd_ == param) && (value < 0))) {
       st.ok = false;
       st.errstr = "gains must be >= 0";
-    }
+      }*/
     return st;
   }
   
@@ -833,7 +855,23 @@ namespace opspace {
   Status JPosTrjTask::
   init(Model const & model)
   {
-    jacobian_ = Matrix::Identity(model.getNDOF(), model.getNDOF());
+    Vector constrained;
+    if (model.getConstrained(constrained)) {
+      int j = -1; int k = -1;
+      jacobian_ = Matrix::Zero(model.getUnconstrainedNDOF(),model.getNDOF());
+      for (size_t ii(0); ii<constrained.rows(); ++ii) {
+	if (constrained[ii] < 0.5) {
+	  j++; k++;
+	  jacobian_(j,k) = 1.0;
+	}
+	else{
+	  k++;
+	}
+      }
+    }
+    else {
+      jacobian_ = Matrix::Identity(model.getNDOF(), model.getNDOF());
+    }
     actual_ = model.getState().position_;
     return initTrajectoryTask(model.getState().position_);
   }
@@ -1147,7 +1185,15 @@ namespace opspace {
     actual_.block(3, 0, 3, 1) = actual_y_;
     actual_.block(6, 0, 3, 1) = actual_z_;
     
-    velocity_ = jacobian_ * model.getState().velocity_;
+    jspace::Constraint* constraint = model.getConstraint();
+    if (constraint) {
+      jspace::State fullState(model.getNDOF(),model.getNDOF(),6);
+      constraint->getFullState(model.getState(),fullState);
+      velocity_ = jacobian_*fullState.velocity_;
+    }
+    else {
+      velocity_ = jacobian_*model.getState().velocity_;
+    }
     
     return ee_node;
   }
@@ -1205,114 +1251,8 @@ namespace opspace {
     pretty_print(command_, os, prefix + "  command", prefix + "    ");
   }
 
-  TestPurePosTask::TestPurePosTask(std::string const & name)
-    : Task(name),
-      end_effector_id_(-1),
-      time_(0),
-      kp_(-1),
-      kd_(-1),
-      control_point_(Vector::Zero(3)),
-      end_effector_node_(0),
-      center_position_(Vector::Zero(3)),
-      radius_(-1),
-      omega_(-1)
-  {
-    declareParameter("end_effector", &end_effector_id_, PARAMETER_FLAG_NOLOG);
-    declareParameter("kp", &kp_, PARAMETER_FLAG_NOLOG);
-    declareParameter("kd", &kd_, PARAMETER_FLAG_NOLOG);
-    declareParameter("control_point", &control_point_);
-    declareParameter("center_position", &center_position_);
-    declareParameter("radius", &radius_);
-    declareParameter("omega", &omega_);
-  }
-
-  Status TestPurePosTask::
-  init(Model const & model) {
-    if (0 > end_effector_id_) {
-      return Status(false, "you did not (correctly) set end_effector_id");
-    }
-    if (3 != control_point_.rows()) {
-      return Status(false, "control_point needs to be three dimensional");
-    }
-    if (0 > radius_) {
-      return Status(false, "you did not (correctly) set radius");
-    }
-    if (0 > omega_) {
-      return Status(false, "you did not (correctly) set omega");
-    }
-    if (3 != center_position_.rows()) {
-      return Status(false, "center_position needs to be three dimensional");
-    }
-    if (0 == updateActual(model)) {
-      return Status(false, "updateActual() failed, did you specify a valid end_effector_id?");
-    }
-    Status ok;
-    return ok;
-   }
-
-  Status TestPurePosTask::
-  update(Model const & model)
-  {
-    end_effector_node_ = updateActual(model);
-    if ( ! end_effector_node_) {
-      return Status(false, "invalid end_effector");
-    }
-
-    Vector a_des(Vector::Zero(3));
-    Vector v_des(Vector::Zero(3));
-    Vector x_des(center_position_);
-
-    double t = time_*1e-3;
-    time_++;
-
-    a_des[1] = -radius_ * pow(omega_,2) * cos(omega_*t);
-    a_des[2] = -radius_ * pow(omega_,2) * sin(omega_*t);
-
-    v_des[1] = -radius_ * omega_ * sin(omega_*t);
-    v_des[2] =  radius_ * omega_ * cos(omega_*t);
-
-    x_des[1] += radius_ * cos(omega_*t);
-    x_des[2] += radius_ * sin(omega_*t);
-
-    command_ = a_des - kd_*( jacobian_ * model.getState().velocity_ - v_des) - kp_* ( actual_ - x_des);
-
-    Status ok;
-    return ok;
-  }
-
-  taoDNode const * TestPurePosTask::
-  updateActual(Model const & model)
-  {
-    if ( ! end_effector_node_) {
-      end_effector_node_ = model.getNode(end_effector_id_);
-    }
-    if (end_effector_node_) {
-      jspace::Transform ee_transform;
-      model.computeGlobalFrame(end_effector_node_,
-			       control_point_[0],
-			       control_point_[1],
-			       control_point_[2],
-			       ee_transform);
-      actual_ = ee_transform.translation();
-
-      Matrix Jfull;
-      if ( ! model.computeJacobian(end_effector_node_, actual_[0], actual_[1], actual_[2], Jfull)) {
-	return 0;
-      }
-      jacobian_ = Jfull.block(0, 0, 3, Jfull.cols());
-    }
-    return end_effector_node_;
-  }
-
- void TestPurePosTask::
-  dbg(std::ostream & os,
-      std::string const & title,
-      std::string const & prefix) const
-  {
-  }
-
-  TestVarGainCartPosTask::
-  TestVarGainCartPosTask(std::string const & name)
+  PureCartPosTask::
+  PureCartPosTask(std::string const & name)
     : Task(name),
       end_effector_id_(-1),
       kp_(Vector::Zero(3)),
@@ -1330,7 +1270,7 @@ namespace opspace {
     declareParameter("goalvel",&goalvel_);
   }
 
-  Status TestVarGainCartPosTask::
+  Status PureCartPosTask::
   init(Model const & model) {
     if (0 > end_effector_id_) {
       return Status(false, "you did not (correctly) set end_effector_id");
@@ -1346,26 +1286,36 @@ namespace opspace {
   }
 
 
-  Status TestVarGainCartPosTask::
+  Status PureCartPosTask::
   update(Model const & model) {
     end_effector_node_ = updateActual(model);
     if ( ! end_effector_node_) {
       return Status(false, "invalid end_effector");
     }
 
-    Vector vel(jacobian_*model.getState().velocity_);
+    Vector vel;
+    jspace::Constraint* constraint = model.getConstraint();
+    if (constraint) {
+      jspace::State fullState(model.getNDOF(),model.getNDOF(),6);
+      constraint->getFullState(model.getState(),fullState);
+      vel = jacobian_*fullState.velocity_;
+    }
+    else {
+      vel = jacobian_*model.getState().velocity_;
+    }
+
     command_ = Vector(kp_.cwise()*(goalpos_ - actual_) + kd_.cwise()*(goalvel_ - vel));
 
     Status ok;
     return ok;
   }
 
-  void TestVarGainCartPosTask::
+  void PureCartPosTask::
   dbg(std::ostream & os,std::string const & title,std::string const & prefix) const {
     if ( ! title.empty()) {
       os << title << "\n";
     }
-    os << prefix << "Var Gain Cart Pos Task: `" << instance_name_ << "'\n";
+    os << prefix << "Pure Cart Pos Task: `" << instance_name_ << "'\n";
 
     pretty_print(actual_, os, prefix + "  actual", prefix + "    ");
     pretty_print(goalpos_, os, prefix + "  goalpos", prefix + "    ");
@@ -1373,7 +1323,7 @@ namespace opspace {
     pretty_print(command_, os, prefix + "  command", prefix + "    ");
   }
 
-  taoDNode const * TestVarGainCartPosTask::
+  taoDNode const * PureCartPosTask::
   updateActual(Model const & model) {
     if ( ! end_effector_node_) {
       end_effector_node_ = model.getNode(end_effector_id_);
@@ -1396,32 +1346,39 @@ namespace opspace {
     return end_effector_node_;
   }
 
-  TestPureJointTask::
-  TestPureJointTask(std::string const & name)
+  PureJPosTask::
+  PureJPosTask(std::string const & name)
     : Task(name),
       kp_(Vector::Zero(7)),
       kd_(Vector::Zero(7)),
-      selection_(Vector::Zero(7)),
-      amplitude_(0),
-      omega_(1),
       goalpos_(Vector::Zero(7))
   {
     declareParameter("kp", &kp_);
     declareParameter("kd", &kd_);
-    declareParameter("selection", &selection_);
-    declareParameter("amplitude", &amplitude_);
-    declareParameter("omega", &omega_);
     declareParameter("goalpos", &goalpos_);
   }
 
-  Status TestPureJointTask::
+  Status PureJPosTask::
   init(Model const & model) {
-    jacobian_ = Matrix::Identity(model.getNDOF(), model.getNDOF());
-    actual_ = model.getState().position_;
-    if (selection_.rows() != model.getNDOF() ) {
-      return Status(false, "selection should have the same number of rows as DOF");
+    Vector constrained;
+    if (model.getConstrained(constrained)) {
+      int j = -1; int k = -1;
+      jacobian_ = Matrix::Zero(model.getUnconstrainedNDOF(),model.getNDOF());
+      for (size_t ii(0); ii<constrained.rows(); ++ii) {
+	if (constrained[ii] < 0.5) {
+	  j++; k++;
+	  jacobian_(j,k) = 1.0;
+	}
+	else{
+	  k++;
+	}
+      }
     }
-    if (goalpos_.rows() != model.getNDOF() ) {
+    else {
+      jacobian_ = Matrix::Identity(model.getNDOF(), model.getNDOF());
+    }
+    actual_ = model.getState().position_;
+    if (goalpos_.rows() != model.getUnconstrainedNDOF() ) {
       return Status(false, "goalpos should have the same number of rows as DOF");
     }
     Status ok;
@@ -1429,33 +1386,346 @@ namespace opspace {
   }
 
 
-  Status TestPureJointTask::
+  Status PureJPosTask::
   update(Model const & model) {
-    t++;
-    Vector goal(goalpos_);
-    for ( int ii=0; ii<goal.size(); ++ii) {
-      if (selection_[ii]) {
-	goal[ii] = goal[ii] + amplitude_*sin(omega_*t/1000);
-      }
-    }
-
     actual_ = model.getState().position_;
-    command_ = kp_.cwise()*(goal - actual_) - kd_.cwise()*model.getState().velocity_;
+    command_ = kp_.cwise()*(goalpos_ - actual_) - kd_.cwise()*model.getState().velocity_;
 
     Status ok;
     return ok;
   }
 
-  void TestPureJointTask::
+  void PureJPosTask::
   dbg(std::ostream & os,std::string const & title,std::string const & prefix) const {
     if ( ! title.empty()) {
       os << title << "\n";
     }
-    os << prefix << "Pure Joint Task: `" << instance_name_ << "'\n";
+    os << prefix << "Pure JPos Task: `" << instance_name_ << "'\n";
 
     pretty_print(actual_, os, prefix + "  actual", prefix + "    ");
     pretty_print(jacobian_, os, prefix + "  jacobian", prefix + "    ");
     pretty_print(command_, os, prefix + "  command", prefix + "    ");
+  }
+
+
+  PureJPosTrjTask::
+  PureJPosTrjTask(std::string const & name)
+    : Task(name),
+      cursor_(0),
+      dt_seconds_(-1)
+  {
+    declareParameter("kp", &kp_);
+    declareParameter("kd", &kd_);
+    declareParameter("dt_seconds", &dt_seconds_, PARAMETER_FLAG_NOLOG);
+    declareParameter("trjgoal", &trjgoal_);
+    declareParameter("maxacc", &maxacc_, PARAMETER_FLAG_NOLOG);
+    declareParameter("maxvel", &maxvel_, PARAMETER_FLAG_NOLOG);
+  }
+  
+  
+  PureJPosTrjTask::
+  ~PureJPosTrjTask()
+  {
+    delete cursor_;
+  }
+  
+  
+  Status PureJPosTrjTask::
+  init(Model const & model)
+  {
+    Status st;
+    
+    if (0 > dt_seconds_) {
+      st.ok = false;
+      st.errstr = "you did not (correctly) set dt_seconds";
+      return st;
+    }
+    
+    int const ndim(model.getUnconstrainedNDOF());
+    if (ndim != maxacc_.rows()) {
+      if ((ndim != 1) && (1 == maxacc_.rows())) {
+	maxacc_ = maxacc_[0] * Vector::Ones(ndim);
+      }
+      else {
+	return Status(false, "invalid maxacc dimension");
+      }
+    }
+
+   if (ndim != maxvel_.rows()) {
+      if ((ndim != 1) && (1 == maxvel_.rows())) {
+	maxvel_ = maxvel_[0] * Vector::Ones(ndim);
+      }
+      else {
+	return Status(false, "invalid maxvel dimension");
+      }
+    }
+
+   if (ndim != kp_.rows()) {
+      if ((ndim != 1) && (1 == kp_.rows())) {
+	kp_ = kp_[0] * Vector::Ones(ndim);
+      }
+      else {
+	return Status(false, "invalid kp dimension");
+      }
+    }
+    
+   if (ndim != kd_.rows()) {
+      if ((ndim != 1) && (1 == kd_.rows())) {
+	kd_ = kd_[0] * Vector::Ones(ndim);
+      }
+      else {
+	return Status(false, "invalid kd dimension");
+      }
+    }
+
+    if (cursor_) {
+      if (cursor_->dt_seconds_ != dt_seconds_) {
+	delete cursor_;
+	cursor_ = 0;
+      }
+    }
+    if ( ! cursor_) {
+      cursor_ = new TypeIOTGCursor(ndim, dt_seconds_);
+    }
+    
+    trjgoal_ = model.getState().position_;
+    cursor_->position() = trjgoal_;
+    cursor_->velocity() = Vector::Zero(ndim);
+
+    Vector constrained;
+    if (model.getConstrained(constrained)) {
+      int j = -1; int k = -1;
+      jacobian_ = Matrix::Zero(model.getUnconstrainedNDOF(),model.getNDOF());
+      for (size_t ii(0); ii<constrained.rows(); ++ii) {
+	if (constrained[ii] < 0.5) {
+	  j++; k++;
+	 jacobian_(j,k) = 1.0;
+	}
+	else{
+	  k++;
+	}
+      }
+    }
+    else {
+      jacobian_ = Matrix::Identity(model.getNDOF(), model.getNDOF());
+    }
+    
+  
+    return st;
+  }
+  
+  
+  Status PureJPosTrjTask::
+  update(Model const & model)
+  {
+    if ( ! cursor_) {
+      return Status(false, "not initialized");
+    }
+    
+    int const trjstatus(cursor_->next(maxvel_, maxacc_, trjgoal_));
+    if (0 > trjstatus) {
+      std::ostringstream msg;
+      msg << "trajectory generation error code "
+	  << trjstatus << ": " << otg_errstr(trjstatus);
+      return Status(false, msg.str());
+    }
+    actual_ = model.getState().position_;
+    command_ = kp_.cwise()*(cursor_->position() - actual_) + kd_.cwise()*(cursor_->velocity() - model.getState().velocity_);
+    Status ok;
+    return ok;
+  }
+ 
+ 
+  void PureJPosTrjTask::
+  dbg(std::ostream & os,
+      std::string const & title,
+      std::string const & prefix) const
+  {
+    if ( ! title.empty()) {
+      os << title << "\n";
+    }
+    os << prefix << "trajectory task: `" << instance_name_ << "'\n";
+    if ( ! cursor_) {
+      os << prefix << "  NOT INITIALIZED\n";
+    }
+    else {
+      pretty_print(actual_, os, prefix + "  actual", prefix + "    ");
+      pretty_print(cursor_->position(), os, prefix + "  carrot", prefix + "    ");
+      pretty_print(trjgoal_, os, prefix + "  trjgoal", prefix + "    ");
+    }
+  }
+
+  PureCartPosTrjTask::
+  PureCartPosTrjTask(std::string const & name)
+    : Task(name),
+      end_effector_id_(-1),
+      kp_(Vector::Zero(3)),
+      kd_(Vector::Zero(3)),
+      control_point_(Vector::Zero(3)),
+      end_effector_node_(0),
+      cursor_(0),
+      dt_seconds_(-1)
+  {
+    declareParameter("end_effector", &end_effector_id_ );
+    declareParameter("kp", &kp_);
+    declareParameter("kd", &kd_);
+    declareParameter("control_point", &control_point_);
+    declareParameter("dt_seconds", &dt_seconds_);
+    declareParameter("trjgoal", &trjgoal_);
+    declareParameter("maxacc", &maxacc_);
+    declareParameter("maxvel", &maxvel_);
+  }
+
+  PureCartPosTrjTask::
+  ~PureCartPosTrjTask()
+  {
+    delete cursor_;
+  }
+
+  Status PureCartPosTrjTask::
+  init(Model const & model) {
+    if (0 > end_effector_id_) {
+      return Status(false, "you did not (correctly) set end_effector_id");
+    }
+    if (3 != control_point_.rows()) {
+      return Status(false, "control_point needs to be three dimensional");
+    }
+    
+    if (0 > dt_seconds_) {
+      return Status(false,"you did not (correctly) set dt_seconds");
+    }
+    
+    int const ndim(3);
+    if (ndim != maxacc_.rows()) {
+      if ((ndim != 1) && (1 == maxacc_.rows())) {
+	maxacc_ = maxacc_[0] * Vector::Ones(ndim);
+      }
+      else {
+	return Status(false, "invalid maxacc dimension");
+      }
+    }
+    
+    if (ndim != maxvel_.rows()) {
+      if ((ndim != 1) && (1 == maxvel_.rows())) {
+	maxvel_ = maxvel_[0] * Vector::Ones(ndim);
+      }
+      else {
+	return Status(false, "invalid maxvel dimension");
+      }
+    }
+    
+    if (ndim != kp_.rows()) {
+      if ((ndim != 1) && (1 == kp_.rows())) {
+	kp_ = kp_[0] * Vector::Ones(ndim);
+      }
+      else {
+	return Status(false, "invalid kp dimension");
+      }
+    }
+    
+    if (ndim != kd_.rows()) {
+      if ((ndim != 1) && (1 == kd_.rows())) {
+	kd_ = kd_[0] * Vector::Ones(ndim);
+      }
+      else {
+	return Status(false, "invalid kd dimension");
+      }
+    }
+    
+    if (cursor_) {
+      if (cursor_->dt_seconds_ != dt_seconds_) {
+	delete cursor_;
+	cursor_ = 0;
+      }
+    }
+    if ( ! cursor_) {
+      cursor_ = new TypeIOTGCursor(ndim, dt_seconds_);
+    }
+
+    if (0 == updateActual(model)) {
+      return Status(false, "updateActual() failed, did you specify a valid end_effector_id?");
+    }
+
+    trjgoal_ = actual_;
+    cursor_->position() = trjgoal_;
+    cursor_->velocity() = Vector::Zero(ndim);
+
+    Status ok;
+    return ok;
+  }
+
+
+  Status PureCartPosTrjTask::
+  update(Model const & model) {
+    end_effector_node_ = updateActual(model);
+    if ( ! end_effector_node_) {
+      return Status(false, "invalid end_effector");
+    }
+
+   if ( ! cursor_) {
+      return Status(false, "not initialized");
+    }
+    
+    int const trjstatus(cursor_->next(maxvel_, maxacc_, trjgoal_));
+    if (0 > trjstatus) {
+      std::ostringstream msg;
+      msg << "trajectory generation error code "
+	  << trjstatus << ": " << otg_errstr(trjstatus);
+      return Status(false, msg.str());
+    }
+
+    Vector vel;
+    jspace::Constraint* constraint = model.getConstraint();
+    if (constraint) {
+      jspace::State fullState(model.getNDOF(),model.getNDOF(),6);
+      constraint->getFullState(model.getState(),fullState);
+      vel = jacobian_*fullState.velocity_;
+    }
+    else {
+      vel = jacobian_*model.getState().velocity_;
+    }
+
+    command_ = kp_.cwise()*(cursor_->position() - actual_);
+    command_ += kd_.cwise()*(cursor_->velocity() - vel);
+
+    Status ok;
+    return ok;
+  }
+
+  void PureCartPosTrjTask::
+  dbg(std::ostream & os,std::string const & title,std::string const & prefix) const {
+    if ( ! title.empty()) {
+      os << title << "\n";
+    }
+    os << prefix << "Pure Cart Pos Trj  Task: `" << instance_name_ << "'\n";
+
+    pretty_print(actual_, os, prefix + "  actual", prefix + "    ");
+    pretty_print(trjgoal_, os, prefix + "  goalpos", prefix + "    ");
+    pretty_print(jacobian_, os, prefix + "  jacobian", prefix + "    ");
+    pretty_print(command_, os, prefix + "  command", prefix + "    ");
+  }
+
+  taoDNode const * PureCartPosTrjTask::
+  updateActual(Model const & model) {
+    if ( ! end_effector_node_) {
+      end_effector_node_ = model.getNode(end_effector_id_);
+    }
+    if (end_effector_node_) {
+      jspace::Transform ee_transform;
+      model.computeGlobalFrame(end_effector_node_,
+			       control_point_[0],
+			       control_point_[1],
+			       control_point_[2],
+			       ee_transform);
+      actual_ = ee_transform.translation();
+
+      Matrix Jfull;
+      if ( ! model.computeJacobian(end_effector_node_, actual_[0], actual_[1], actual_[2], Jfull)) {
+	return 0;
+      }
+      jacobian_ = Jfull.block(0, 0, 3, Jfull.cols());
+    }
+    return end_effector_node_;
   }
 
  TestCartForcePosTask::
@@ -1572,40 +1842,499 @@ namespace opspace {
     return end_effector_node_;
   }
 
-TestPureJPosTrajTask::
-  TestPureJPosTrajTask(std::string const & name)
+ TestFFCartCircleTask::TestFFCartCircleTask(std::string const & name)
     : Task(name),
+      end_effector_id_(-1),
+      time_(0),
+      kp_(-1),
+      kd_(-1),
+      control_point_(Vector::Zero(3)),
+      end_effector_node_(0),
+      center_position_(Vector::Zero(3)),
+      radius_(-1),
+      omega_(-1)
+  {
+    declareParameter("end_effector", &end_effector_id_, PARAMETER_FLAG_NOLOG);
+    declareParameter("kp", &kp_, PARAMETER_FLAG_NOLOG);
+    declareParameter("kd", &kd_, PARAMETER_FLAG_NOLOG);
+    declareParameter("control_point", &control_point_);
+    declareParameter("center_position", &center_position_);
+    declareParameter("radius", &radius_);
+    declareParameter("omega", &omega_);
+  }
+
+  Status TestFFCartCircleTask::
+  init(Model const & model) {
+    if (0 > end_effector_id_) {
+      return Status(false, "you did not (correctly) set end_effector_id");
+    }
+    if (3 != control_point_.rows()) {
+      return Status(false, "control_point needs to be three dimensional");
+    }
+    if (0 > radius_) {
+      return Status(false, "you did not (correctly) set radius");
+    }
+    if (0 > omega_) {
+      return Status(false, "you did not (correctly) set omega");
+    }
+    if (3 != center_position_.rows()) {
+      return Status(false, "center_position needs to be three dimensional");
+    }
+    if (0 == updateActual(model)) {
+      return Status(false, "updateActual() failed, did you specify a valid end_effector_id?");
+    }
+    Status ok;
+    return ok;
+   }
+
+  Status TestFFCartCircleTask::
+  update(Model const & model)
+  {
+    end_effector_node_ = updateActual(model);
+    if ( ! end_effector_node_) {
+      return Status(false, "invalid end_effector");
+    }
+
+    Vector a_des(Vector::Zero(3));
+    Vector v_des(Vector::Zero(3));
+    Vector x_des(center_position_);
+
+    double t = time_*1e-3;
+    time_++;
+
+    x_des[1] += radius_ * cos(omega_*t);
+    x_des[2] += radius_ * sin(omega_*t);
+
+    v_des[1] = -radius_ * omega_ * sin(omega_*t);
+    v_des[2] =  radius_ * omega_ * cos(omega_*t);
+
+    a_des[1] = -radius_ * pow(omega_,2) * cos(omega_*t);
+    a_des[2] = -radius_ * pow(omega_,2) * sin(omega_*t);
+
+    command_ = a_des - kd_*( jacobian_ * model.getState().velocity_ - v_des) - kp_* ( actual_ - x_des);
+
+    Status ok;
+    return ok;
+  }
+
+  taoDNode const * TestFFCartCircleTask::
+  updateActual(Model const & model)
+  {
+    if ( ! end_effector_node_) {
+      end_effector_node_ = model.getNode(end_effector_id_);
+    }
+    if (end_effector_node_) {
+      jspace::Transform ee_transform;
+      model.computeGlobalFrame(end_effector_node_,
+			       control_point_[0],
+			       control_point_[1],
+			       control_point_[2],
+			       ee_transform);
+      actual_ = ee_transform.translation();
+
+      Matrix Jfull;
+      if ( ! model.computeJacobian(end_effector_node_, actual_[0], actual_[1], actual_[2], Jfull)) {
+	return 0;
+      }
+      jacobian_ = Jfull.block(0, 0, 3, Jfull.cols());
+    }
+    return end_effector_node_;
+  }
+
+  void TestFFCartCircleTask::
+  dbg(std::ostream & os,
+      std::string const & title,
+      std::string const & prefix) const
+  {
+  }
+
+  TestSpherePosTask::
+  TestSpherePosTask(std::string const & name)
+    : Task(name),
+      end_effector_id_(-1),
+      kp_(1),
+      kd_(1),
+      control_point_(Vector::Zero(3)),
+      end_effector_node_(0),
+      center_position_(Vector::Zero(3)),
+      goalradius_(0.1),
+      radius_(0),
+      rdot_(0)
+  {
+    declareParameter("end_effector", &end_effector_id_ );
+    declareParameter("kp", &kp_);
+    declareParameter("kd", &kd_);
+    declareParameter("control_point",&control_point_);
+    declareParameter("center_position", &center_position_);
+    declareParameter("goal_radius",&goalradius_);
+  }
+
+  Status TestSpherePosTask::
+  init(Model const & model) {
+    if (0 > end_effector_id_) {
+      return Status(false, "you did not (correctly) set end_effector_id");
+    }
+    if (3 != control_point_.rows()) {
+      return Status(false, "control_point needs to be three dimensional");
+    }
+    if (3 != center_position_.rows()) {
+      return Status(false, "center_position needs to be three dimensional");
+    }
+    if (0 == updateActual(model)) {
+      return Status(false, "updateActual() failed, did you specify a valid end_effector_id?");
+    }
+    Status ok;
+    return ok;
+  }
+
+
+  Status TestSpherePosTask::
+  update(Model const & model) {
+    end_effector_node_ = updateActual(model);
+    if ( ! end_effector_node_) {
+      return Status(false, "invalid end_effector");
+    }
+    command_ = Vector::Zero(1);
+    command_[0] = kp_*(goalradius_ - radius_) - kd_*rdot_;
+
+    Status ok;
+    return ok;
+  }
+
+  void TestSpherePosTask::
+  dbg(std::ostream & os,std::string const & title,std::string const & prefix) const {
+    if ( ! title.empty()) {
+      os << title << "\n";
+    }
+    os << prefix << "Pure Cart Pos Task: `" << instance_name_ << "'\n";
+
+    pretty_print(actual_, os, prefix + "  actual", prefix + "    ");
+    os << prefix << "goalradius: " << goalradius_ << "\n";
+    pretty_print(jacobian_, os, prefix + "  jacobian", prefix + "    ");
+    pretty_print(command_, os, prefix + "  command", prefix + "    ");
+  }
+
+  taoDNode const * TestSpherePosTask::
+  updateActual(Model const & model) {
+    if ( ! end_effector_node_) {
+      end_effector_node_ = model.getNode(end_effector_id_);
+    }
+    if (end_effector_node_) {
+      jspace::Transform ee_transform;
+      model.computeGlobalFrame(end_effector_node_,
+			       control_point_[0],
+			       control_point_[1],
+			       control_point_[2],
+			       ee_transform);
+      Vector cart(ee_transform.translation());
+      actual_ = Vector::Zero(1);
+      actual_[0] = sqrt(pow(cart[0] - center_position_[0],2) + pow(cart[1] - center_position_[1],2) + pow(cart[2] - center_position_[2],2));
+      radius_ = actual_[0];
+
+      Matrix Jfull;
+      if ( ! model.computeJacobian(end_effector_node_, cart[0], cart[1], cart[2], Jfull)) {
+	return 0;
+      }
+      Matrix Jc(Matrix::Zero(1,3));
+      Jc(0,0) = (cart[0] - center_position_[0])/radius_;
+      Jc(0,1) = (cart[1] - center_position_[1])/radius_;
+      Jc(0,2) = (cart[2] - center_position_[2])/radius_;
+
+      jacobian_ = Jc*Jfull.block(0, 0, 3, Jfull.cols());
+
+      Vector vel(jacobian_ * model.getState().velocity_);
+      rdot_ = vel[0];
+      actual_ = ee_transform.translation();
+    }
+    return end_effector_node_;
+  }
+
+  TestRemoteControlTask::
+  TestRemoteControlTask(std::string const & name)
+    : Task(name),
+      end_effector_id_(-1),
+      control_point_(Vector::Zero(3)),
+      end_effector_node_(0),
+      kp_(Vector::Zero(3))
+  {
+    declareParameter("end_effector",  &end_effector_id_ );
+    declareParameter("control_point", &control_point_);
+    declareParameter("kp", &kp_);
+  }
+
+  Status TestRemoteControlTask::
+  init(Model const & model) {
+    if (0 > end_effector_id_) {
+      return Status(false, "you did not (correctly) set end_effector_id");
+    }
+    if (3 != control_point_.rows()) {
+      return Status(false, "control_point needs to be three dimensional");
+    }
+    if (3 != kp_.rows()) {
+      return Status(false, "kp needs to be three dimensional");
+    }
+
+    if (0 == updateActual(model)) {
+      return Status(false, "updateActual() failed, did you specify a valid end_effector_id?");
+    }
+    Status ok;
+    return ok;
+  }
+
+
+  Status TestRemoteControlTask::
+  update(Model const & model) {
+    end_effector_node_ = updateActual(model);
+    if ( ! end_effector_node_) {
+      return Status(false, "invalid end_effector");
+    }
+    command_ = kp_.cwise() * model.getState().remote_command_;
+
+    Status ok;
+    return ok;
+  }
+
+  void TestRemoteControlTask::
+  dbg(std::ostream & os,std::string const & title,std::string const & prefix) const {
+    if ( ! title.empty()) {
+      os << title << "\n";
+    }
+    os << prefix << "Remote Control Task: `" << instance_name_ << "'\n";
+
+    pretty_print(actual_, os, prefix + "  actual", prefix + "    ");
+    pretty_print(jacobian_, os, prefix + "  jacobian", prefix + "    ");
+    pretty_print(command_, os, prefix + "  command", prefix + "    ");
+  }
+
+  taoDNode const * TestRemoteControlTask::
+  updateActual(Model const & model) {
+    if ( ! end_effector_node_) {
+      end_effector_node_ = model.getNode(end_effector_id_);
+    }
+    if (end_effector_node_) {
+      jspace::Transform ee_transform;
+      model.computeGlobalFrame(end_effector_node_,
+			       control_point_[0],
+			       control_point_[1],
+			       control_point_[2],
+			       ee_transform);
+      
+      Vector cart_pos(ee_transform.translation());
+      actual_ = Vector::Zero(3);
+      actual_[0] = cart_pos[0];
+      actual_[1] = cart_pos[1];
+
+      jspace::Constraint* constraint = model.getConstraint();
+      if (constraint) {
+	jspace::State fullState(model.getNDOF(),model.getNDOF(),6);
+	constraint->getFullState(model.getState(),fullState);
+	actual_[2] = fullState.position_[5];
+      }
+      else {
+	Matrix ee_ori(ee_transform.linear());
+	actual_[2] = atan2(ee_ori(1,0),ee_ori(0,0));
+      }
+
+      Matrix Jfull;
+      if ( ! model.computeJacobian(end_effector_node_, cart_pos[0], cart_pos[1], cart_pos[2], Jfull)) {
+	return 0;
+      }
+      Matrix Jglobal(Matrix::Zero(3,Jfull.cols()));
+      for (size_t ii(0); ii < 3; ++ii) {
+	for (size_t jj(0); jj < Jfull.cols(); ++jj) {
+	  if (ii<2) {
+	    Jglobal(ii,jj) = Jfull(ii,jj);
+	  }
+	  else {
+	    Jglobal(ii,jj) = Jfull(ii+3,jj);
+	  }
+	}
+      }
+
+      //Rotate back to local frame
+      jacobian_ = Matrix::Zero(3,Jfull.cols());
+      jacobian_ = ee_transform.linear().transpose() * Jglobal;
+    }
+    return end_effector_node_;
+  }
+
+  TestPositionOrientationTask::
+  TestPositionOrientationTask(std::string const & name)
+    : Task(name),
+      end_effector_id_(-1),
+      kp_(50),
+      kd_(5),
+      vgoal_x(Vector::Zero(3)),
+      vgoal_y(Vector::Zero(3)),
+      vgoal_z(Vector::Zero(3)),
+      goalpos_(Vector::Zero(3))
+  {
+    declareParameter("end_effector_id", &end_effector_id_, PARAMETER_FLAG_NOLOG);
+    declareParameter("kp", &kp_, PARAMETER_FLAG_NOLOG);
+    declareParameter("kd", &kd_, PARAMETER_FLAG_NOLOG);
+    declareParameter("goalpos", &goalpos_);
+    declareParameter("goal_x", &vgoal_x);    
+    declareParameter("goal_y", &vgoal_y);   
+    declareParameter("goal_z", &vgoal_z);
+  }
+  
+  
+  Status TestPositionOrientationTask::
+  init(Model const & model)
+  {
+    if (0 > end_effector_id_) {
+      return Status(false, "I need an end effector ID please");
+    }
+    if ( ! updateActual(model)) {
+      return Status(false, "invalid end effector ID or failure to compute Jacobian");
+
+    }
+    if ( vgoal_x == Vector::Zero(3) || vgoal_y == Vector::Zero(3) || vgoal_z == Vector::Zero(3) ) {
+	goal_x_ = actual_x_;
+	goal_y_ = actual_y_;
+	goal_z_ = actual_z_;
+	vgoal_x = goal_x_;
+	vgoal_y = goal_y_;
+	vgoal_z = goal_z_;
+    }
+    Status ok;
+    return ok;
+  }
+  
+  
+  taoDNode const * TestPositionOrientationTask::
+  updateActual(Model const & model)
+  {
+    taoDNode * ee_node(model.getNode(end_effector_id_));
+    if ( ! ee_node) {
+      return 0;
+    }
+    
+    jspace::Transform ee_transform;
+    model.computeGlobalFrame(ee_node, Vector::Zero(3), ee_transform);
+    Matrix Jfull;
+    eepos_ =  ee_transform.translation();
+    if ( ! model.computeJacobian(ee_node,
+				 eepos_[0],
+				 eepos_[1],
+				 eepos_[2],
+				 Jfull)) {
+      return 0;
+    }
+    
+    jacobian_ = Jfull;
+    
+    actual_x_ = ee_transform.linear().block(0, 0, 3, 1);
+    actual_y_ = ee_transform.linear().block(0, 1, 3, 1);
+    actual_z_ = ee_transform.linear().block(0, 2, 3, 1);
+
+    actual_.resize(12);
+    actual_.block(0, 0, 3, 1) = eepos_;
+    actual_.block(3, 0, 3, 1) = actual_x_;
+    actual_.block(6, 0, 3, 1) = actual_y_;
+    actual_.block(9, 0, 3, 1) = actual_z_;
+    
+    jspace::Constraint* constraint = model.getConstraint();
+    if (constraint) {
+      jspace::State fullState(model.getNDOF(),model.getNDOF(),6);
+      constraint->getFullState(model.getState(),fullState);
+      velocity_ = jacobian_*fullState.velocity_;
+    }
+    else {
+      velocity_ = jacobian_*model.getState().velocity_;
+    }
+    
+    return ee_node;
+  }
+  
+  
+  Status TestPositionOrientationTask::
+  update(Model const & model)
+  {
+    goal_x_ = vgoal_x;
+    goal_y_ = vgoal_y;
+    goal_z_ = vgoal_z;
+    if ( ! updateActual(model)) {
+      return Status(false, "invalid end effector ID");
+    }
+
+    delta_ = actual_x_.cross(goal_x_) + actual_y_.cross(goal_y_) + actual_z_.cross(goal_z_);
+    delta_ *= 0.5;
+
+    Vector pos_error(Vector::Zero(6));
+    pos_error.block(0, 0, 3, 1) = goalpos_ - eepos_;
+    pos_error.block(3, 0, 3, 1) = delta_;
+
+    command_ = kp_.cwise() * pos_error - kd_.cwise() * velocity_;
+    
+    Status ok;
+    return ok;
+  }
+  
+  
+  void TestPositionOrientationTask::
+  dbg(std::ostream & os,
+      std::string const & title,
+      std::string const & prefix) const
+  {
+    if ( ! title.empty()) {
+      os << title << "\n";
+    }
+    os << prefix << "positionorientation task: `" << instance_name_ << "'\n";
+    pretty_print(velocity_, os, prefix + "  velocity", prefix + "    ");
+    pretty_print(goalpos_, os, prefix + "  goalpos", prefix + "    ");
+    pretty_print(goal_x_, os, prefix + "  goal_x", prefix + "    ");
+    pretty_print(goal_y_, os, prefix + "  goal_y", prefix + "    ");
+    pretty_print(goal_z_, os, prefix + "  goal_z", prefix + "    ");
+    pretty_print(eepos_, os, prefix + "  eepos", prefix + "    ");
+    pretty_print(actual_x_, os, prefix + "  actual_x", prefix + "    ");
+    pretty_print(actual_y_, os, prefix + "  actual_y", prefix + "    ");
+    pretty_print(actual_z_, os, prefix + "  actual_z", prefix + "    ");
+    pretty_print(command_, os, prefix + "  command", prefix + "    ");
+  }
+
+  TestBaseControlTask::
+  TestBaseControlTask(std::string const & name)
+    : Task(name),
+      end_effector_id_(-1),
+      kp_(Vector::Zero(3)),
+      kd_(Vector::Zero(3)),
+      control_point_(Vector::Zero(3)),
+      end_effector_node_(0),
       cursor_(0),
       dt_seconds_(-1)
   {
+    declareParameter("end_effector", &end_effector_id_ );
     declareParameter("kp", &kp_);
     declareParameter("kd", &kd_);
-    declareParameter("dt_seconds", &dt_seconds_, PARAMETER_FLAG_NOLOG);
+    declareParameter("control_point", &control_point_);
+    declareParameter("dt_seconds", &dt_seconds_);
     declareParameter("trjgoal", &trjgoal_);
-    declareParameter("maxacc", &maxacc_, PARAMETER_FLAG_NOLOG);
-    declareParameter("maxvel", &maxvel_, PARAMETER_FLAG_NOLOG);
+    declareParameter("maxacc", &maxacc_);
+    declareParameter("maxvel", &maxvel_);
+    declareParameter("tau_sensor", &tau_sensor_);
   }
-  
-  
-  TestPureJPosTrajTask::
-  ~TestPureJPosTrajTask()
+
+  TestBaseControlTask::
+  ~TestBaseControlTask()
   {
     delete cursor_;
   }
-  
-  
-  Status TestPureJPosTrajTask::
-  init(Model const & model)
-  {
-    Status st;
-    
-    if (0 > dt_seconds_) {
-      st.ok = false;
-      st.errstr = "you did not (correctly) set dt_seconds";
-      return st;
+
+  Status TestBaseControlTask::
+  init(Model const & model) {
+    if (0 > end_effector_id_) {
+      return Status(false, "you did not (correctly) set end_effector_id");
+    }
+    if (3 != control_point_.rows()) {
+      return Status(false, "control_point needs to be three dimensional");
     }
     
-    int const ndim(model.getNDOF());
+    if (0 > dt_seconds_) {
+      return Status(false,"you did not (correctly) set dt_seconds");
+    }
+    
+    int const ndim(3);
     if (ndim != maxacc_.rows()) {
       if ((ndim != 1) && (1 == maxacc_.rows())) {
 	maxacc_ = maxacc_[0] * Vector::Ones(ndim);
@@ -1614,8 +2343,8 @@ TestPureJPosTrajTask::
 	return Status(false, "invalid maxacc dimension");
       }
     }
-
-   if (ndim != maxvel_.rows()) {
+    
+    if (ndim != maxvel_.rows()) {
       if ((ndim != 1) && (1 == maxvel_.rows())) {
 	maxvel_ = maxvel_[0] * Vector::Ones(ndim);
       }
@@ -1623,8 +2352,8 @@ TestPureJPosTrajTask::
 	return Status(false, "invalid maxvel dimension");
       }
     }
-
-   if (ndim != kp_.rows()) {
+    
+    if (ndim != kp_.rows()) {
       if ((ndim != 1) && (1 == kp_.rows())) {
 	kp_ = kp_[0] * Vector::Ones(ndim);
       }
@@ -1633,7 +2362,7 @@ TestPureJPosTrajTask::
       }
     }
     
-   if (ndim != kd_.rows()) {
+    if (ndim != kd_.rows()) {
       if ((ndim != 1) && (1 == kd_.rows())) {
 	kd_ = kd_[0] * Vector::Ones(ndim);
       }
@@ -1641,7 +2370,7 @@ TestPureJPosTrajTask::
 	return Status(false, "invalid kd dimension");
       }
     }
-
+    
     if (cursor_) {
       if (cursor_->dt_seconds_ != dt_seconds_) {
 	delete cursor_;
@@ -1651,21 +2380,28 @@ TestPureJPosTrajTask::
     if ( ! cursor_) {
       cursor_ = new TypeIOTGCursor(ndim, dt_seconds_);
     }
-    
-    trjgoal_ = model.getState().position_;
+
+    if (0 == updateActual(model)) {
+      return Status(false, "updateActual() failed, did you specify a valid end_effector_id?");
+    }
+
+    trjgoal_ = actual_;
     cursor_->position() = trjgoal_;
     cursor_->velocity() = Vector::Zero(ndim);
 
-    jacobian_ = Matrix::Identity(ndim,ndim);
-    
-    return st;
+    Status ok;
+    return ok;
   }
-  
-  
-  Status TestPureJPosTrajTask::
-  update(Model const & model)
-  {
-    if ( ! cursor_) {
+
+
+  Status TestBaseControlTask::
+  update(Model const & model) {
+    end_effector_node_ = updateActual(model);
+    if ( ! end_effector_node_) {
+      return Status(false, "invalid end_effector");
+    }
+
+   if ( ! cursor_) {
       return Status(false, "not initialized");
     }
     
@@ -1676,30 +2412,305 @@ TestPureJPosTrajTask::
 	  << trjstatus << ": " << otg_errstr(trjstatus);
       return Status(false, msg.str());
     }
-    actual_ = model.getState().position_;
-    command_ = kp_.cwise()*(cursor_->position() - actual_) + kd_.cwise()*(cursor_->velocity() - model.getState().velocity_);
-	Status ok;
-	return ok;
+
+    Vector vel;
+    jspace::Constraint* constraint = model.getConstraint();
+    if (constraint) {
+      jspace::State fullState(model.getNDOF(),model.getNDOF(),6);
+      constraint->getFullState(model.getState(),fullState);
+      vel = jacobian_*fullState.velocity_;
+    }
+    else {
+      vel = jacobian_*model.getState().velocity_;
+    }
+
+    command_ = kp_.cwise()*(cursor_->position() - actual_);
+    command_ += kd_.cwise()*(cursor_->velocity() - vel);
+
+    Status ok;
+    return ok;
   }
- 
- 
-  void TestPureJPosTrajTask::
-  dbg(std::ostream & os,
-      std::string const & title,
-      std::string const & prefix) const
-  {
+
+  void TestBaseControlTask::
+  dbg(std::ostream & os,std::string const & title,std::string const & prefix) const {
     if ( ! title.empty()) {
       os << title << "\n";
     }
-    os << prefix << "trajectory task: `" << instance_name_ << "'\n";
-    if ( ! cursor_) {
-      os << prefix << "  NOT INITIALIZED\n";
+    os << prefix << "Test Base Control  Task: `" << instance_name_ << "'\n";
+
+    pretty_print(actual_, os, prefix + "  actual", prefix + "    ");
+    pretty_print(trjgoal_, os, prefix + "  goalpos", prefix + "    ");
+    pretty_print(jacobian_, os, prefix + "  jacobian", prefix + "    ");
+    pretty_print(command_, os, prefix + "  command", prefix + "    ");
+  }
+
+  taoDNode const * TestBaseControlTask::
+  updateActual(Model const & model) {
+    if ( ! end_effector_node_) {
+      end_effector_node_ = model.getNode(end_effector_id_);
     }
-    else {
-      pretty_print(actual_, os, prefix + "  actual", prefix + "    ");
-      pretty_print(cursor_->position(), os, prefix + "  carrot", prefix + "    ");
-      pretty_print(trjgoal_, os, prefix + "  trjgoal", prefix + "    ");
+    if (end_effector_node_) {
+      jspace::Transform ee_transform;
+      model.computeGlobalFrame(end_effector_node_,
+			       control_point_[0],
+			       control_point_[1],
+			       control_point_[2],
+			       ee_transform);
+      Vector cart_pos(ee_transform.translation());
+      actual_ = Vector::Zero(3);
+      actual_[0] = cart_pos[0];
+      actual_[1] = cart_pos[1];
+
+   jspace::Constraint* constraint = model.getConstraint();
+      if (constraint) {
+	jspace::State fullState(model.getNDOF(),model.getNDOF(),6);
+	constraint->getFullState(model.getState(),fullState);
+	actual_[2] = fullState.position_[5];
+      }
+      else {
+	Matrix ee_ori(ee_transform.linear());
+	actual_[2] = atan2(ee_ori(1,0),ee_ori(0,0));
+      }
+
+      Matrix Jfull;
+      if ( ! model.computeJacobian(end_effector_node_, cart_pos[0], cart_pos[1], cart_pos[2], Jfull)) {
+	return 0;
+      }
+      jacobian_ = Matrix::Zero(3,Jfull.cols());
+      for (size_t ii(0); ii < 3; ++ii) {
+	for (size_t jj(0); jj < Jfull.cols(); ++jj) {
+	  if (ii<2) {
+	    jacobian_(ii,jj) = Jfull(ii,jj);
+	  }
+	  else {
+	    jacobian_(ii,jj) = Jfull(ii+3,jj);
+	  }
+	}
+      }
     }
+    tau_sensor_ = model.getState().force_;
+
+    return end_effector_node_;
+    
+  }
+
+  TestRemoteVelControlTask::
+  TestRemoteVelControlTask(std::string const & name)
+    : Task(name),
+      end_effector_id_(-1),
+      control_point_(Vector::Zero(3)),
+      end_effector_node_(0),
+      kp_(Vector::Zero(3))
+  {
+    declareParameter("end_effector",  &end_effector_id_ );
+    declareParameter("control_point", &control_point_);
+    declareParameter("kp", &kp_);
+    declareParameter("vdes", &vdes_);
+  }
+
+  Status TestRemoteVelControlTask::
+  init(Model const & model) {
+    if (0 > end_effector_id_) {
+      return Status(false, "you did not (correctly) set end_effector_id");
+    }
+    if (3 != control_point_.rows()) {
+      return Status(false, "control_point needs to be three dimensional");
+    }
+    if (3 != kp_.rows()) {
+      return Status(false, "kp needs to be three dimensional");
+    }
+
+    if (0 == updateActual(model)) {
+      return Status(false, "updateActual() failed, did you specify a valid end_effector_id?");
+    }
+    Status ok;
+    return ok;
+  }
+
+
+  Status TestRemoteVelControlTask::
+  update(Model const & model) {
+    end_effector_node_ = updateActual(model);
+    if ( ! end_effector_node_) {
+      return Status(false, "invalid end_effector");
+    }
+
+    Vector vel(jacobian_ * model.getFullState().velocity_);
+
+    command_ =  kp_.cwise() * (model.getState().remote_command_.cwise() * vdes_ - vel);
+
+    Status ok;
+    return ok;
+  }
+
+  void TestRemoteVelControlTask::
+  dbg(std::ostream & os,std::string const & title,std::string const & prefix) const {
+    if ( ! title.empty()) {
+      os << title << "\n";
+    }
+    os << prefix << "Remote Vel Control Task: `" << instance_name_ << "'\n";
+
+    pretty_print(actual_, os, prefix + "  actual", prefix + "    ");
+    pretty_print(jacobian_, os, prefix + "  jacobian", prefix + "    ");
+    pretty_print(command_, os, prefix + "  command", prefix + "    ");
+  }
+
+  taoDNode const * TestRemoteVelControlTask::
+  updateActual(Model const & model) {
+    if ( ! end_effector_node_) {
+      end_effector_node_ = model.getNode(end_effector_id_);
+    }
+    if (end_effector_node_) {
+      jspace::Transform ee_transform;
+      model.computeGlobalFrame(end_effector_node_,
+			       control_point_[0],
+			       control_point_[1],
+			       control_point_[2],
+			       ee_transform);
+      
+      Vector cart_pos(ee_transform.translation());
+      actual_ = Vector::Zero(3);
+      actual_[0] = cart_pos[0];
+      actual_[1] = cart_pos[1];
+
+      jspace::Constraint* constraint = model.getConstraint();
+      if (constraint) {
+	jspace::State fullState(model.getNDOF(),model.getNDOF(),6);
+	constraint->getFullState(model.getState(),fullState);
+	actual_[2] = fullState.position_[5];
+      }
+      else {
+	Matrix ee_ori(ee_transform.linear());
+	actual_[2] = atan2(ee_ori(1,0),ee_ori(0,0));
+      }
+
+      Matrix Jfull;
+      if ( ! model.computeJacobian(end_effector_node_, cart_pos[0], cart_pos[1], cart_pos[2], Jfull)) {
+	return 0;
+      }
+      Matrix Jglobal(Matrix::Zero(3,Jfull.cols()));
+      for (size_t ii(0); ii < 3; ++ii) {
+	for (size_t jj(0); jj < Jfull.cols(); ++jj) {
+	  if (ii<2) {
+	    Jglobal(ii,jj) = Jfull(ii,jj);
+	  }
+	  else {
+	    Jglobal(ii,jj) = Jfull(ii+3,jj);
+	  }
+	}
+      }
+
+      //Rotate back to local frame
+      jacobian_ = Matrix::Zero(3,Jfull.cols());
+      jacobian_ = ee_transform.linear().transpose() * Jglobal;
+    }
+    return end_effector_node_;
+  }
+
+  TestRelativeCOMTask::
+  TestRelativeCOMTask(std::string const & name)
+    : Task(name),
+      end_effector_id_(-1),
+      control_point_(Vector::Zero(3)),
+      end_effector_node_(0),
+      kp_(Vector::Zero(2)),
+      kd_(Vector::Zero(2))
+  {
+    declareParameter("end_effector",  &end_effector_id_ );
+    declareParameter("control_point", &control_point_);
+    declareParameter("kp", &kp_);
+    declareParameter("kd", &kd_);
+    declareParameter("COM", &COM_);
+  }
+
+  Status TestRelativeCOMTask::
+  init(Model const & model) {
+    if (0 > end_effector_id_) {
+      return Status(false, "you did not (correctly) set end_effector_id");
+    }
+    if (3 != control_point_.rows()) {
+      return Status(false, "control_point needs to be three dimensional");
+    }
+    if (1 != kp_.rows()) {
+      return Status(false, "kp needs to be two dimensional");
+    }
+    if (1 != kd_.rows()) {
+      return Status(false, "kd needs to be two dimensional");
+    }
+
+    if (0 == updateActual(model)) {
+      return Status(false, "updateActual() failed, did you specify a valid end_effector_id?");
+    }
+    Status ok;
+    return ok;
+  }
+
+
+  Status TestRelativeCOMTask::
+  update(Model const & model) {
+    end_effector_node_ = updateActual(model);
+    if ( ! end_effector_node_) {
+      return Status(false, "invalid end_effector");
+    }
+
+    Vector vel(jacobian_ * model.getFullState().velocity_);
+
+    command_ = kp_.cwise() * (-actual_) - kd_.cwise() * vel;
+
+    Status ok;
+    return ok;
+  }
+
+  void TestRelativeCOMTask::
+  dbg(std::ostream & os,std::string const & title,std::string const & prefix) const {
+    if ( ! title.empty()) {
+      os << title << "\n";
+    }
+    os << prefix << "Relative COM Task: `" << instance_name_ << "'\n";
+
+    pretty_print(actual_, os, prefix + "  actual", prefix + "    ");
+    pretty_print(jacobian_, os, prefix + "  jacobian", prefix + "    ");
+    pretty_print(command_, os, prefix + "  command", prefix + "    ");
+  }
+
+  taoDNode const * TestRelativeCOMTask::
+  updateActual(Model const & model) {
+    if ( ! end_effector_node_) {
+      end_effector_node_ = model.getNode(end_effector_id_);
+    }
+    if (end_effector_node_) {
+      jspace::Transform ee_transform;
+      model.computeGlobalFrame(end_effector_node_,
+			       control_point_[0],
+			       control_point_[1],
+			       control_point_[2],
+			       ee_transform);
+      
+      Vector base_pos(ee_transform.translation());
+
+      Vector com; Matrix Jcom;
+      if ( ! model.computeCOM(com,Jcom)) {
+	return 0;
+      }
+      
+      COM_ = Vector::Zero(1);
+      COM_[0] = com[0];
+
+      actual_ = Vector::Zero(1);
+      actual_[0] = com[0] - base_pos[0];
+      //actual_[1] = com[1] - base_pos[1]; 
+
+      Matrix Jfull;
+      if ( ! model.computeJacobian(end_effector_node_, base_pos[0], base_pos[1], base_pos[2], Jfull)) {
+	return 0;
+      }
+  
+      jacobian_ = Matrix::Zero(1,Jfull.cols());
+      jacobian_.block(0,0,1,Jfull.cols()) = Jcom.block(0,0,1,Jfull.cols()) - Jfull.block(0,0,1,Jfull.cols());
+      //jacobian_.block(0,0,1,Jfull.cols()) = Jcom.block(0,0,1,Jfull.cols());
+
+    }
+    return end_effector_node_;
   }
 
 }

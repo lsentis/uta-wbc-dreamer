@@ -58,19 +58,16 @@ namespace wbc_m3_ctrl {
   public:
     virtual ~RTUtilFull();
     
-    virtual int init(jspace::State const & head_state,
-	             jspace::State const & arm_state,
-          	     jspace::State const & hand_state,
-	             jspace::State const & torso_state) = 0;
+    virtual int init(jspace::State const & body_state,
+	             jspace::State const & head_state,
+          	     jspace::State const & hand_state) = 0;
     
-    virtual int update(jspace::State const & head_state,
+    virtual int update(jspace::State const & body_state,
+		       jspace::Vector & body_command,
+	               jspace::State const & head_state,
 		       jspace::Vector & head_command,
-	               jspace::State const & arm_state,
-		       jspace::Vector & arm_command,
           	       jspace::State const & hand_state,
-		       jspace::Vector & hand_command,
-	               jspace::State const & torso_state,
-		       jspace::Vector & torso_command) = 0;
+		       jspace::Vector & hand_command) = 0;
     
     virtual int cleanup(void) = 0;
     

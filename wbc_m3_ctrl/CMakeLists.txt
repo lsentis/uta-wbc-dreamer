@@ -36,10 +36,16 @@ if (HAVE_M3)
   rosbuild_add_library (wbc_m3_ctrl
     src/rt_util.cpp
     src/udp_util.cpp
+    src/rt_util_base.cpp
+    src/rt_util_upperbody.cpp
     src/rt_util_full.cpp
+    src/rt_util_wh.cpp
     include/wbc_m3_ctrl/headcontroller.h
     include/wbc_m3_ctrl/handcontroller.h
     include/wbc_m3_ctrl/torsocontroller.h
+    include/wbc_m3_ctrl/SHMConfig.h
+    include/wbc_m3_ctrl/shareData.h
+    include/wbc_m3_ctrl/torque_feedback.h
     )
   
   rosbuild_add_executable (test_rt_util src/test_rt_util.cpp)
@@ -63,7 +69,16 @@ if (HAVE_M3)
   rosbuild_add_executable (teleop src/teleop.cpp)
   target_link_libraries (teleop wbc_m3_ctrl)
 
+  rosbuild_add_executable (servo_base src/servo_base.cpp)
+  target_link_libraries (servo_base wbc_m3_ctrl)
+
+  rosbuild_add_executable (servo_upperbody src/servo_upperbody.cpp)
+  target_link_libraries (servo_upperbody wbc_m3_ctrl)
+
   rosbuild_add_executable (servo_full src/servo_full.cpp)
   target_link_libraries (servo_full wbc_m3_ctrl)
+
+  rosbuild_add_executable (servo_wh src/servo_wh.cpp)
+  target_link_libraries (servo_wh wbc_m3_ctrl)
 
 endif (HAVE_M3)

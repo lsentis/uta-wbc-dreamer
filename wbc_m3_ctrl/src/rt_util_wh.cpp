@@ -78,7 +78,7 @@ namespace wbc_m3_ctrl {
     key = ftok( KEY_PATH, PROJECT_ID); 
     
     /* create share memory segment */       
-    shmID =  shmget( key, WH_SHM_SIZE, IPC_CREAT | 0777) ; // read write for owner
+    shmID =  shmget( key, WH_SHM_SIZE, IPC_CREAT | 0600 ) ; // read write for owner
     if( shmID < 0 )
       {
 	fprintf( stderr, "Share memory create error: %s\n", strerror( errno ));
@@ -325,7 +325,7 @@ namespace wbc_m3_ctrl {
       
 
       for (size_t ii(0); ii < 3; ++ii) {
-	shm_cmd.mobile_base.tq_desired[ii] = 1.0e3 * command[ii];
+	shm_cmd.mobile_base.tq_desired[ii] = 1.0e3 *(command[ii]/1.8619);
       }
 
       shm_cmd.timestamp = shm_status.timestamp;

@@ -151,6 +151,9 @@ namespace jspace {
       deFloat mass_;
       deVector3 inertia_;
       deVector3 com_;
+      deFloat rotorInertia_;
+      deFloat gearRatio_;
+      deInt isConstrained_;
       std::string robotName_;
       std::string jointName_;
       bool jointIsFree_;
@@ -175,7 +178,8 @@ namespace jspace {
 			      std::string const & linkName, std::string const & jointName,
 			      int parentNodeID, int operationalPointID, 
 			      char jointType, char jointAxis, deFrame & homeF,
-			      float mass,  deVector3 & inertia, deVector3 & com);
+			      float mass,  deVector3 & inertia, deVector3 & com,
+			      float rotorInertia, float gearRatio, int isConstrained);
     };
     
   }

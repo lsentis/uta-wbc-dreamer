@@ -21,6 +21,7 @@
 /**
    \file jspace/Model.cpp
    \author Roland Philippsen, inspired by wbc/core code of Luis Sentis
+   \modified by Josh Petersen
 */
 
 #include "Model.hpp"
@@ -28,6 +29,9 @@
 #include <tao/dynamics/taoNode.h>
 #include <tao/dynamics/taoJoint.h>
 #include <tao/dynamics/taoDynamics.h>
+#include <Eigen/LU>
+#include <Eigen/SVD>
+#include <string>
 
 #undef DEBUG
 
@@ -135,6 +139,23 @@ namespace jspace {
     
     return 0;
   }
+
+  int Model::
+  setConstraint(std::string constraint) {
+    if (!constraint.compare("Dreamer_Base")) {
+      constraint_ = new Dreamer_Base();
+      return 1;
+    } 
+    if (!constraint.compare("Dreamer_Torso")) {
+      constraint_ = new Dreamer_Torso();
+      return 1;
+    } 
+    if (!constraint.compare("Dreamer_Full")) {
+      constraint_ = new Dreamer_Full();
+      return 1;
+    } 
+    return 0;
+  }
   
   
   Model::
@@ -158,9 +179,17 @@ namespace jspace {
   setState(State const & state)
   {
     state_ = state;
+    State fullState(ndof_,ndof_,6);
+    if (constraint_){
+      constraint_->getFullState(state_,fullState);
+    }
+    else {
+      fullState = state_;
+    }
+
     for (size_t ii(0); ii < ndof_; ++ii) {
       taoJoint * joint(kgm_tree_->info[ii].joint);
-      joint->setQ(&const_cast<State&>(state).position_.coeffRef(ii));
+      joint->setQ(&const_cast<State&>(fullState).position_.coeffRef(ii));
       joint->zeroDQ();
       joint->zeroDDQ();
       joint->zeroTau();
@@ -168,12 +197,13 @@ namespace jspace {
     if (cc_tree_) {
       for (size_t ii(0); ii < ndof_; ++ii) {
 	taoJoint * joint(cc_tree_->info[ii].joint);
-	joint->setQ(&const_cast<State&>(state).position_.coeffRef(ii));
-	joint->setDQ(&const_cast<State&>(state).velocity_.coeffRef(ii));
+	joint->setQ(&const_cast<State&>(fullState).position_.coeffRef(ii));
+	joint->setDQ(&const_cast<State&>(fullState).velocity_.coeffRef(ii));
 	joint->zeroDDQ();
 	joint->zeroTau();
       }
     }
+    fullstate_ = fullState;
   }
   
   
@@ -197,6 +227,36 @@ namespace jspace {
   {
     // one day this will be different...
     return ndof_;
+  }
+
+  size_t Model::
+  getUnconstrainedNDOF() const
+  {
+    size_t uNDOF(0);
+    for (size_t ii(0); ii < ndof_; ++ii) {
+      if (*kgm_tree_->info[ii].node->isConstrained() < 0.5) uNDOF++;
+    }
+    return uNDOF;
+  }
+
+  bool Model::
+  getConstrained(Vector & constrained) const
+  {
+    bool found = false;
+    constrained = Vector::Zero(ndof_);
+
+    for (size_t ii(0); ii < ndof_; ++ii) {
+      if (*kgm_tree_->info[ii].node->isConstrained() > 0.5) {
+	found = true;
+	constrained[ii] = 1;
+      }
+    }
+    return found;
+  }
+
+  Constraint * Model::
+  getConstraint() const {
+    return constraint_;
   }
   
   
@@ -372,6 +432,26 @@ namespace jspace {
     deVector3 const & gpos(node->frameGlobal()->translation());
     return computeJacobian(node, gpos[0], gpos[1], gpos[2], jacobian);
   }
+
+  bool Model::
+  computeJacobianCOM(int id,
+		     Matrix & jacobian) const {
+    taoDNode * const node = getNode(id);
+    if (!node) {
+      return 0;
+    }
+
+    deVector3 const * com(const_cast<taoDNode*>(node)->center());
+
+    Transform ee_transform;
+    computeGlobalFrame(node,com->elementAt(0), com->elementAt(1), com->elementAt(2), ee_transform);
+    
+    return computeJacobian(node,
+			   ee_transform.translation()[0],
+			   ee_transform.translation()[1],
+			   ee_transform.translation()[2],
+			   jacobian);
+  }
   
   
   bool Model::
@@ -478,7 +558,34 @@ namespace jspace {
     }
     return true;
   }
-  
+    
+  bool Model::
+  computeCOM(Vector & com, Matrix & opt_jcom) const
+  {
+    com = Vector::Zero(3);
+    opt_jcom = Matrix::Zero(3,ndof_);
+    double mtotal(0);
+    for (size_t ii(9); ii < 12; ++ii) {
+      taoDNode * const node(kgm_tree_->info[ii].node);
+      deVector3 wpos;
+      wpos.multiply(node->frameGlobal()->rotation(), *(node->center()));
+      wpos += node->frameGlobal()->translation();
+
+      Matrix wjcom;
+      if ( ! computeJacobian(node, wpos[0], wpos[1], wpos[2], wjcom)) {
+	return false;
+      }
+      opt_jcom += *(node->mass()) * wjcom.block(0, 0, 3, wjcom.cols());
+      wpos *= *(node->mass());
+      mtotal += *(node->mass());
+      com += Vector::Map(&wpos[0], 3);
+    }
+    if (fabs(mtotal) > 1e-3) {
+      com /= mtotal;
+      opt_jcom /= mtotal;
+    }
+    return true;
+}
   
   void Model::
   computeGravity()
@@ -593,26 +700,27 @@ namespace jspace {
     for (size_t ii(0); ii < ndof_; ++ii) {
       kgm_tree_->info[ii].joint->zeroTau();
     }
+
+    mass_inertia_.resize(ndof_, ndof_);
+    for (size_t irow(0); irow < ndof_; ++irow) {
+      for (size_t icol(0); icol <= irow; ++icol) {
+	mass_inertia_.coeffRef(irow, icol) = a_upper_triangular_[squareToTriangularIndex(irow, icol, ndof_)];
+	if (irow != icol) {
+	  mass_inertia_.coeffRef(icol, irow) = mass_inertia_.coeff(irow, icol);
+	}
+      }
+    }
+    for (size_t ii(0); ii < ndof_; ++ii) {
+      mass_inertia_(ii,ii) +=  *kgm_tree_->info[ii].node->rotorInertia() * pow(*kgm_tree_->info[ii].node->gearRatio(),2);
+    }
   }
   
   
   bool Model::
   getMassInertia(Matrix & mass_inertia) const
   {
-    if (a_upper_triangular_.empty()) {
-      return false;
-    }
-    
-    mass_inertia.resize(ndof_, ndof_);
-    for (size_t irow(0); irow < ndof_; ++irow) {
-      for (size_t icol(0); icol <= irow; ++icol) {
-	mass_inertia.coeffRef(irow, icol) = a_upper_triangular_[squareToTriangularIndex(irow, icol, ndof_)];
-	if (irow != icol) {
-	  mass_inertia.coeffRef(icol, irow) = mass_inertia.coeff(irow, icol);
-	}
-      }
-    }
-    
+    mass_inertia.resize(ndof_,ndof_);
+    mass_inertia = mass_inertia_;
     return true;
   }
   
@@ -620,55 +728,18 @@ namespace jspace {
   void Model::
   computeInverseMassInertia()
   {
-    if (ainv_upper_triangular_.empty()) {
-      ainv_upper_triangular_.resize(ndof_ * (ndof_ + 1) / 2);
-    }
-    
-    deFloat const one(1);
-    for (size_t irow(0); irow < ndof_; ++irow) {
-      taoJoint * joint(kgm_tree_->info[irow].joint);
-      
-      // Compute one column of Ainv by solving forward dynamics of the
-      // corresponding joint having a unit torque, while all the
-      // others remain unactuated. This works on the kgm_tree because
-      // it has zero speeds, thus the Coriolis-centrifgual effects are
-      // zero, and by using zero gravity we get pure system dynamics:
-      // acceleration = mass_inv * force (in matrix form).
-      joint->setTau(&one);
-      taoDynamics::fwdDynamics(kgm_tree_->root, &zero_gravity);
-      joint->zeroTau();
-      
-      // Retrieve the column of Ainv by reading the joint
-      // accelerations generated by the column-selecting unit torque
-      // (into a flattened upper triangular matrix).
-      for (size_t icol(0); icol <= irow; ++icol) {
-	kgm_tree_->info[icol].joint->getDDQ(&ainv_upper_triangular_[squareToTriangularIndex(irow, icol, ndof_)]);
-      }
-    }
-    
-    // Reset all the accelerations.
-    for (size_t ii(0); ii < ndof_; ++ii) {
-      kgm_tree_->info[ii].joint->zeroDDQ();
-    }
+    //Assumes computeMassInertia was called first
+    inv_mass_inertia_.resize(ndof_,ndof_);
+    inv_mass_inertia_ = mass_inertia_.inverse();
   }
   
   
   bool Model::
   getInverseMassInertia(Matrix & inverse_mass_inertia) const
   {
-    if (ainv_upper_triangular_.empty()) {
-      return false;
-    }
-    
-    inverse_mass_inertia.resize(ndof_, ndof_);
-    for (size_t irow(0); irow < ndof_; ++irow) {
-      for (size_t icol(0); icol <= irow; ++icol) {
-	inverse_mass_inertia.coeffRef(irow, icol) = ainv_upper_triangular_[squareToTriangularIndex(irow, icol, ndof_)];
-	if (irow != icol) {
-	  inverse_mass_inertia.coeffRef(icol, irow) = inverse_mass_inertia.coeff(irow, icol);
-	}
-      }
-    }
+ 
+    inverse_mass_inertia.resize(ndof_,ndof_);
+    inverse_mass_inertia =  inv_mass_inertia_;
     
     return true;
   }

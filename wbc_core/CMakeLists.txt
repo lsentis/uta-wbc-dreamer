@@ -66,6 +66,9 @@ rosbuild_add_library (wbc_core
   stanford_wbc/jspace/jspace/strutil.cpp
   stanford_wbc/jspace/jspace/tao_util.cpp
   stanford_wbc/jspace/jspace/Controller.cpp
+  stanford_wbc/jspace/jspace/pseudo_inverse.cpp
+  stanford_wbc/jspace/jspace/Constraint.cpp
+  stanford_wbc/jspace/jspace/constraint_library.cpp
   stanford_wbc/jspace/jspace/Model.cpp
   stanford_wbc/jspace/jspace/test/util.cpp
   stanford_wbc/jspace/jspace/test/sai_brep.cpp
@@ -74,7 +77,6 @@ rosbuild_add_library (wbc_core
   stanford_wbc/jspace/jspace/test/sai_util.cpp
   stanford_wbc/jspace/jspace/tao_dump.cpp
 
-  stanford_wbc/opspace/src/pseudo_inverse.cpp
   stanford_wbc/opspace/src/task_library.cpp
   stanford_wbc/opspace/src/Skill.cpp
   stanford_wbc/opspace/src/skill_library.cpp
@@ -91,3 +93,6 @@ rosbuild_add_library (wbc_core
 
 rosbuild_add_executable (checkSkillFile stanford_wbc/opspace/src/checkSkillFile.cpp)
 target_link_libraries (checkSkillFile wbc_core)
+
+rosbuild_add_executable (checkXML src/checkXML.cpp)
+target_link_libraries(checkXML wbc_core)

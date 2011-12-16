@@ -7,7 +7,6 @@ include_directories (
   )
 
 add_library (opspace SHARED
-  src/pseudo_inverse.cpp
   src/Parameter.cpp
   src/Task.cpp
   src/Factory.cpp

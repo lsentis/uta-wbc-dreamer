@@ -65,6 +65,11 @@ void taoNode::_Initialize()
 	_center.zero();
 	_inertia.zero();
 
+	_rotorInertia = 0;
+	_gearRatio = 0;
+	
+	_isConstrained = 0;
+
 	_Fext.zero();
 
 	_parent = NULL;
@@ -253,6 +258,7 @@ deVector6* taoNodeRoot::acceleration()
 taoNodeRoot::taoNodeRoot(deFrame const & global)
 { 
 	_zero = 0;
+	_zeroInt = 0;
 	_frameGlobal = global;
 
 	_group = NULL;

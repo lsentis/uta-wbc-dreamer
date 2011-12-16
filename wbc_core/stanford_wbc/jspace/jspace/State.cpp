@@ -21,6 +21,7 @@
 /**
    \file jspace/State.cpp
    \author Roland Philippsen
+   \modified by Josh Petersen
 */
 
 #include "State.hpp"
@@ -76,6 +77,13 @@ namespace jspace {
     else {
       force_ = Vector::Zero(nforce);
     }
+
+    accelerometer_ = Vector::Zero(3);
+    magnetometer_ = Vector::Zero(3);
+    ang_vel_ = Vector::Zero(3);
+    orientation_mtx_ = Matrix::Zero(3,3);
+    remote_command_ = Vector::Zero(3);
+
   }
   
   
@@ -111,6 +119,11 @@ namespace jspace {
     position_ = rhs.position_;
     velocity_ = rhs.velocity_;
     force_ = rhs.force_;
+    accelerometer_ = rhs.accelerometer_;
+    magnetometer_ = rhs.magnetometer_;
+    ang_vel_ = rhs.ang_vel_;
+    orientation_mtx_ = rhs.orientation_mtx_;
+    remote_command_ = rhs.remote_command_;
     return *this;
   }
   

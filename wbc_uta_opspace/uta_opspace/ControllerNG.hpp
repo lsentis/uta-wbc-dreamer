@@ -59,6 +59,8 @@ namespace uta_opspace {
 			   Vector & gamma);
     
     inline Vector const & getCommand() const { return gamma_; }
+
+    inline Vector const & getActual() const { return actual_; }
     
     void qhlog(Skill & skill, long long timestamp);
     
@@ -86,6 +88,11 @@ namespace uta_opspace {
     Vector jpos_;
     Vector jvel_;
     Vector gamma_;
+
+    Vector actual_;
+
+    Vector fullJpos_;
+    Vector fullJvel_;
   };
 
 }

@@ -21,6 +21,7 @@
 /**
    \file jspace/State.hpp
    \author Roland Philippsen
+   \modified by Josh Petersen
 */
 
 #ifndef JSPACE_STATE_HPP
@@ -80,6 +81,12 @@ namespace jspace {
     Vector position_;
     Vector velocity_;
     Vector force_;
+    Vector accelerometer_;
+    Vector magnetometer_;
+    Vector ang_vel_;
+    Matrix orientation_mtx_;
+    Vector remote_command_;
+
   };
   
 }

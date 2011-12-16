@@ -76,6 +76,11 @@ public:
 	 */
 	virtual void addForce(const deVector6* f) { _Fext += *f; }
 
+	virtual deFloat* rotorInertia() { return &_rotorInertia; }
+	virtual deFloat* gearRatio() { return &_gearRatio;  }
+
+	virtual deInt* isConstrained() { return &_isConstrained; }
+
 	virtual void updateFrame();
 	virtual void integrate(deFloat dt);
 	
@@ -121,6 +126,11 @@ private:
 	deVector3 _center;
 	deFloat _mass;
 	deMatrix3 _inertia;
+
+	deFloat _rotorInertia;
+	deFloat _gearRatio;
+
+	deInt _isConstrained;
 
 	deVector6 _Fext;
 
@@ -168,6 +178,11 @@ public:
 	virtual void zeroForce() {}
 	virtual void addForce(const deVector6* f) {}
 
+	virtual deFloat* rotorInertia() { return &_zero; }
+	virtual deFloat* gearRatio() { return &_zero;  }
+
+	virtual deInt* isConstrained() { return &_zeroInt; }
+
 	virtual void updateFrame() {}
 	virtual void integrate(deFloat dt) {}
 
@@ -195,6 +210,7 @@ public:
 
 private:
 	deFloat _zero; // YYY
+	deInt _zeroInt;
 	deFrame _frameGlobal;
 
 	taoGroup* _group;

@@ -1,4 +1,7 @@
 list (APPEND SRCS
+  jspace/pseudo_inverse.cpp
+  jspace/Constraint.cpp
+  jspace/constraint_library.cpp
   jspace/State.cpp
   jspace/Model.cpp
   jspace/Status.cpp

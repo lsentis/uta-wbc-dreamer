@@ -119,7 +119,7 @@ namespace jspace {
     Matrix const ori_mtx(state.orientation_mtx_);
 
     if ( ori_mtx(2,0) < 0.99 && ori_mtx(2,0) > -0.99) {
-      fullState.position_[4] = -sin(ori_mtx(2,0));
+      fullState.position_[4] = -asin(ori_mtx(2,0));
       fullState.position_[3] = atan2(ori_mtx(2,1)/cos(fullState.position_[4]), ori_mtx(2,2)/cos(fullState.position_[4]));
       fullState.position_[5] = atan2(ori_mtx(1,0)/cos(fullState.position_[4]), ori_mtx(0,0)/cos(fullState.position_[4]));
     }
@@ -242,8 +242,8 @@ namespace jspace {
       ay = rot * ay;
       wx = base_ori * ay;
       
-      Jc_.block(2*ii,0,1,9) = wx.transpose()*(Jv + r_cross * Jw);
-      Jc_.block(2*ii+1,0,1,9) = wz.transpose()*(Jv + r_cross * Jw);
+      Jc_.block(2*ii,0,1,19) = wx.transpose()*(Jv + r_cross * Jw);
+      Jc_.block(2*ii+1,0,1,19) = wz.transpose()*(Jv + r_cross * Jw);
 
     }
 
@@ -289,9 +289,24 @@ namespace jspace {
     Matrix const ori_mtx(state.orientation_mtx_);
 
     if ( ori_mtx(2,0) < 0.99 && ori_mtx(2,0) > -0.99) {
-      fullState.position_[4] = -sin(ori_mtx(2,0));
-      fullState.position_[3] = atan2(ori_mtx(2,1)/cos(fullState.position_[4]), ori_mtx(2,2)/cos(fullState.position_[4]));
-      fullState.position_[5] = atan2(ori_mtx(1,0)/cos(fullState.position_[4]), ori_mtx(0,0)/cos(fullState.position_[4]));
+      fullState.position_[4] = -asin(ori_mtx(2,0));
+      fullState.position_[3] = atan2(ori_mtx(2,1)/cos(fullState.position_[4]), ori_mtx(2,2)/cos(fullState.position_[4])) - M_PI;
+      fullState.position_[5] = -atan2(ori_mtx(1,0)/cos(fullState.position_[4]), ori_mtx(0,0)/cos(fullState.position_[4])) + M_PI;
+
+      if (fullState.position_[3] > M_PI) {
+	fullState.position_[3] -= 2*M_PI;
+      }
+      else if (fullState.position_[3] < -M_PI) {
+	fullState.position_[3] += 2*M_PI;
+      }
+
+      if (fullState.position_[5] > M_PI) {
+	fullState.position_[5] -= 2*M_PI;
+      }
+      else if (fullState.position_[5] < -M_PI) {
+	fullState.position_[5] += 2*M_PI;
+      }
+
     }
     else {
       fullState.position_[5] = 0;

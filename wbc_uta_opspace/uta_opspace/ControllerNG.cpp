@@ -4,7 +4,8 @@
  * Copyright (C) 2011 The Board of Trustees of The Leland Stanford Junior University. All rights reserved.
  * Copyright (C) 2011 University of Texas at Austin. All rights reserved.
  *
- * Authors: Roland Philippsen (Stanford) and Luis Sentis (UT Austin)
+ * Authors: Josh Petersen (UT Austin), Roland Philippsen (Stanford)
+ *          and Luis Sentis (UT Austin)
  *          http://cs.stanford.edu/group/manips/
  *          http://www.me.utexas.edu/~hcrl/
  *
@@ -24,27 +25,31 @@
  */
 
 #include "ControllerNG.hpp"
-#include <opspace/pseudo_inverse.hpp>
+#include <jspace/pseudo_inverse.hpp>
 
 // hmm...
 #include <Eigen/LU>
 #include <Eigen/SVD>
 #include <opspace/task_library.hpp>
+#include <jspace/constraint_library.hpp>
 
 using jspace::pretty_print;
 using boost::shared_ptr;
 
 namespace uta_opspace {
   
-  
   ControllerNG::
   ControllerNG(std::string const & name)
     : Controller(name),
       fallback_(false),
-      loglen_(-1),
+      /*loglen_(-1),
       logsubsample_(-1),
       logprefix_(""),
-      logcount_(-1)
+      logcount_(-1)*/
+      loglen_(1000),
+      logsubsample_(1),
+      logprefix_("Ramp_Experiment"),
+      logcount_(0)
   {
     declareParameter("loglen", &loglen_, PARAMETER_FLAG_NOLOG);
     declareParameter("logsubsample", &logsubsample_, PARAMETER_FLAG_NOLOG);
@@ -52,6 +57,8 @@ namespace uta_opspace {
     declareParameter("jpos", &jpos_);
     declareParameter("jvel", &jvel_);
     declareParameter("gamma", &gamma_);
+    declareParameter("fullJpos", &fullJpos_);
+    declareParameter("fullJvel", &fullJvel_);
   }
   
   
@@ -163,31 +170,71 @@ namespace uta_opspace {
     
     //////////////////////////////////////////////////
     // the magic nullspace sauce...
-    Vector Irot(Vector::Zero(7));
-    Vector N(Vector::Zero(7));
-
-    Irot(0) = 138; Irot(1) = 138; Irot(2) = 135; Irot(3) = 135; Irot(4) = 35; Irot(5) = 35; Irot(6) =35 ;
-    N(0) = 120; N(1) = 100; N(2) = 100; N(3) = 100; N(4) = 100; N(5) = 50; N(6) = 50;
 
 
-    Matrix a;
-    if ( ! model.getMassInertia(a)) {
-      return Status(false, "failed to retrieve mass inertia");
+    fullJpos_ = model.getFullState().position_;
+    fullJvel_ = model.getFullState().velocity_;
+    
+
+    Matrix ainv;
+    if ( ! model.getInverseMassInertia(ainv)) {
+      return Status(false, "failed to retrieve inverse mass inertia");
     }
 
-    for (size_t ii(0); ii<model.getNDOF(); ++ii) {
-      a(ii,ii) = a(ii,ii) + Irot(ii)*pow(N(ii),2)/(1000*pow(100,2));
-    }
-
-    Matrix ainv(a.inverse());
     Vector grav;
     if ( ! model.getGravity(grav)) {
       return Status(false, "failed to retrieve gravity torques");
     }
+
+    jspace::Constraint * constraint = model.getConstraint();
+
+    if (constraint) {
+      if(!constraint->updateJc(model)) {
+	return Status(false, "failed to update Jc");
+      }
+    }
+
+    Matrix Nc;
+    if (constraint) {
+      if (!constraint->getNc(ainv,Nc)) {
+	return Status(false, "failed to get Nc");
+      }
+    }
+    else {
+      Nc = Matrix::Identity(model.getNDOF(),model.getNDOF());
+    }
+
+    Matrix UNc;
+    if (constraint) {
+      Matrix U;
+      if (!constraint->getU(U)) {
+	return Status(false, "failed to get U");
+      }
+      UNc = U*Nc;
+    }
+    else {
+      UNc = Matrix::Identity(model.getNDOF(),model.getNDOF());
+    }  
+
+    Matrix phi(UNc * ainv * UNc.transpose());
     
+
+    Matrix UNcBar;
+    if (constraint) {
+      Matrix phiinv;
+      //XXXX hardcoded sigma threshold
+      jspace::pseudoInverse(phi,
+		    0.0001,
+		    phiinv, 0);
+      UNcBar = ainv * UNc.transpose() * phiinv;
+    }
+    else {
+      UNcBar = Matrix::Identity(model.getNDOF(),model.getNDOF());
+    }
+
     size_t const ndof(model.getNDOF());
     size_t const n_minus_1(tasks->size() - 1);
-    Matrix nstar(Matrix::Identity(ndof, ndof));
+    Matrix nstar(Matrix::Identity(model.getUnconstrainedNDOF(), model.getUnconstrainedNDOF()));
     int first_active_task_index(0); // because tasks can have empty Jacobian
     
     for (size_t ii(0); ii < tasks->size(); ++ii) {
@@ -203,13 +250,13 @@ namespace uta_opspace {
 	}
 	continue;
       }
-      
+
       Matrix jstar;
       if (ii == first_active_task_index) {
-	jstar = jac;
+	jstar = jac * UNcBar;
       }
       else {
-	jstar = jac * nstar;
+	jstar = jac * UNcBar * nstar;
       }
       
       Matrix jjt(jstar * jstar.transpose());
@@ -239,11 +286,11 @@ namespace uta_opspace {
       }
       
       Matrix lstar;
-      pseudoInverse(jstar * ainv * jstar.transpose(),
+      jspace::pseudoInverse(jstar * phi * jstar.transpose(),
 		    task->getSigmaThreshold(),
 		    lstar, 0);////&sv_lstar_[ii]);
       Vector pstar;
-      pstar = lstar * jstar * ainv * grav; // same would go for coriolis-centrifugal...
+      pstar = lstar * jstar * UNc * ainv * Nc.transpose()* grav;
 
       Vector force(task->getForce());
       if (force.rows() == 0) {
@@ -254,11 +301,13 @@ namespace uta_opspace {
       if (ii == first_active_task_index) {
 	// first time around: initialize gamma
 	gamma = jstar.transpose() * (lstar * task->getCommand() + pstar + force);
+	actual_ = task->getActual();
+	//gamma = jstar.transpose() * (pstar);
       }
       else {
 	Vector fcomp;
 	// here, gamma is still at the previous iteration's value
-	fcomp = lstar * jstar * ainv * gamma;
+	fcomp = lstar * jstar * phi * gamma;
 	gamma += jstar.transpose() * (lstar * task->getCommand() + pstar + force - fcomp);
       }
       
@@ -266,8 +315,19 @@ namespace uta_opspace {
 	// not sure whether Eigen2 correctly handles the case where a
 	// matrix gets updated by left-multiplication...
 	Matrix const
-	  nnext((Matrix::Identity(ndof, ndof) - ainv * jstar.transpose() * lstar * jstar) * nstar);
+	  nnext((Matrix::Identity(model.getUnconstrainedNDOF(), model.getUnconstrainedNDOF()) - phi * jstar.transpose() * lstar * jstar) * nstar);
 	nstar = nnext;
+	/*
+	Vector sv_nstar;
+	if (1 == nstar.rows()) {
+	  sv_nstar = Vector::Ones(1, 1) * nstar.coeff(0, 0);
+	}
+	else {
+	  sv_nstar = Eigen::SVD<Matrix>(nstar).singularValues();
+	}
+	if (ii == 0) {
+	  jspace::pretty_print(sv_nstar, std::cout, "sv_nstar", "  ");
+	  }*/
       }
     }
     

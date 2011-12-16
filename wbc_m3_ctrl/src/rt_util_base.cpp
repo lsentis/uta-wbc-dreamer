@@ -4,6 +4,7 @@
  * Copyright (c) 2011 University of Texas at Austin. All rights reserved.
  *
  * Author: Roland Philippsen
+ * modified by Josh Petersen for the base
  *
  * BSD license:
  * Redistribution and use in source and binary forms, with or without
@@ -41,6 +42,7 @@
 #include <rtai_sem.h>
 #include <rtai_nam2num.h>
 #include <rtai_registry.h>
+#include <wbc_m3_ctrl/torque_feedback.h>
 
 //#include "m3/shared_mem/torque_shm_sds.h"
 #include "m3uta/controllers/torque_shm_uta_sds.h"
@@ -76,7 +78,14 @@ namespace wbc_m3_ctrl {
     jspace::Vector command(3);
     RTIME tick_period;
     int cb_status;
-    
+
+    TorqueFeedback* torque_fb(new TorqueFeedback());
+    Vector t_offset(3);
+    t_offset[0] = 0;//1.55;//1.6125;
+    t_offset[1] = 0;//1.71;//1.630;    
+    t_offset[2] = 0;//1.50;//1.6375;
+    float conv_factor = 1; // 17.76; //1000*(1/482)*(5/3.3)*(1/0.02)*(1/8.85);
+
     //////////////////////////////////////////////////
     // Initialize shared memory, RT task, and semaphores.
     
@@ -126,7 +135,7 @@ namespace wbc_m3_ctrl {
     for (size_t ii(0); ii < 3; ++ii) {
       state.position_[ii] = M_PI * shm_status.mobile_base.theta[ii] / 180.0;
       state.velocity_[ii] = M_PI * shm_status.mobile_base.thetadot[ii] / 180.0;
-      state.force_[ii] = 1e-3 * shm_status.mobile_base.torque[ii];
+      state.force_[ii] = conv_factor * (1e-3 * shm_status.mobile_base.torque[ii] - t_offset[ii]);
     }
 
     for (size_t ii(0); ii < 3; ++ii) {
@@ -175,7 +184,7 @@ namespace wbc_m3_ctrl {
       for (size_t ii(0); ii < 3; ++ii) {
 	state.position_[ii] = M_PI * shm_status.mobile_base.theta[ii] / 180.0;
 	state.velocity_[ii] = M_PI * shm_status.mobile_base.thetadot[ii] / 180.0;
-	state.force_[ii] = 1e-3 * shm_status.mobile_base.torque[ii];
+	state.force_[ii] = conv_factor * (1e-3 * shm_status.mobile_base.torque[ii] - t_offset[ii]);
       }
 
       for (size_t ii(0); ii < 3; ++ii) {
@@ -186,6 +195,16 @@ namespace wbc_m3_ctrl {
 	  state.orientation_mtx_(ii,jj) = shm_status.mobile_base.imu.orientation_mtx[3*ii+jj];
 	}
       }
+      /*
+      state.orientation_mtx_(0,0) = cos(0.178);
+      state.orientation_mtx_(0,1) = 0;     
+      state.orientation_mtx_(0,2) = sin(0.178);
+      state.orientation_mtx_(1,0) = 0;
+      state.orientation_mtx_(1,1) = 1;
+      state.orientation_mtx_(1,2) = 0;
+      state.orientation_mtx_(2,0) = -sin(0.178);
+      state.orientation_mtx_(2,1) = 0;
+      state.orientation_mtx_(2,2) = cos(0.178);*/
 
       if (0 != cb_status) {
 	fprintf(stderr, "update callback returned %d\n", cb_status);
@@ -202,9 +221,11 @@ namespace wbc_m3_ctrl {
 	continue;
       }
       
+      Vector fb_command(torque_fb->computeFeedback(command,state.force_));
 
       for (size_t ii(0); ii < 3; ++ii) {
-	shm_cmd.mobile_base.tq_desired[ii] = 1.0e3 * command[ii];
+	//shm_cmd.mobile_base.tq_desired[ii] = 1.0e3 * fb_command[ii];
+	shm_cmd.mobile_base.tq_desired[ii] = 1.0e3 * (command[ii] / 1.8619);
       }
 
       shm_cmd.timestamp = shm_status.timestamp;

@@ -92,6 +92,11 @@ public:
 	virtual void zeroForce() = 0;
 	virtual void addForce(const deVector6* f) = 0;
 
+	virtual deFloat* rotorInertia() = 0;
+	virtual deFloat* gearRatio() = 0;
+
+	virtual deInt* isConstrained() = 0;
+
 	virtual void updateFrame() = 0;
 	virtual void integrate(deFloat dt) = 0;
 

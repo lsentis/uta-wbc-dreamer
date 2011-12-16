@@ -20,7 +20,7 @@
  */
 
 #include <opspace/ClassicTaskPostureController.hpp>
-#include <opspace/pseudo_inverse.hpp>
+#include <jspace/pseudo_inverse.hpp>
 
 // hmm...
 #include <Eigen/LU>
@@ -95,7 +95,7 @@ namespace opspace {
     size_t const ndof(model.getNDOF());
     Matrix const & jac(task->getJacobian());
     
-    pseudoInverse(jac * ainv * jac.transpose(),
+    jspace::pseudoInverse(jac * ainv * jac.transpose(),
 		  task->getSigmaThreshold(),
 		  lambda_,
 		  0);

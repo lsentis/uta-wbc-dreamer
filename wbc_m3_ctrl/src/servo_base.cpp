@@ -53,6 +53,7 @@
 #include <uta_opspace/WriteSkill.hpp>
 #include <uta_opspace/JointMultiPos.hpp>
 #include <uta_opspace/CartMultiPos.hpp>
+#include <uta_opspace/BaseMultiPos.hpp>
 #include <wbc_core/opspace_param_callbacks.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <err.h>
@@ -333,7 +334,7 @@ int main(int argc, char ** argv)
   Factory::addSkillType<uta_opspace::TaskOriPostureSkill>("uta_opspace::TaskPostureSkill");
   Factory::addSkillType<uta_opspace::JointMultiPos>("uta_opspace::JointMultiPos");
   Factory::addSkillType<uta_opspace::CartMultiPos>("uta_opspace::CartMultiPos");
-  
+  Factory::addSkillType<uta_opspace::BaseMultiPos>("uta_opspace::BaseMultiPos");
   
   
   ros::init(argc, argv, "wbc_m3_ctrl_servo", ros::init_options::NoSigintHandler);
@@ -375,8 +376,8 @@ int main(int argc, char ** argv)
 	servo.skill->dbg(cout, "\n\n**************************************************", "");
 	controller->dbg(cout, "--------------------------------------------------", "");
 	cout << "--------------------------------------------------\n";
-	jspace::pretty_print(model->getState().position_, cout, "jpos", "  ");
-	jspace::pretty_print(model->getState().velocity_, cout, "jvel", "  ");
+	jspace::pretty_print(model->getFullState().position_, cout, "jpos", "  ");
+	jspace::pretty_print(model->getFullState().velocity_, cout, "jvel", "  ");
 	jspace::pretty_print(model->getState().force_, cout, "jforce", "  ");
 	Matrix ori_mtx(model->getState().orientation_mtx_);
 	cout << "Ori_mtx:\n";
@@ -391,15 +392,6 @@ int main(int argc, char ** argv)
 	Vector gravity;
 	model->getGravity(gravity);
 	jspace::pretty_print(gravity, cout, "gravity", "  ");
-	/*	Matrix jstar(controller->getJStar());
-	cout << "J*:\n";
-	for (size_t ii(0); ii < jstar.rows(); ++ii) {
-	  for (size_t jj(0); jj < jstar.cols(); ++jj) {
-	    cout << jstar(ii,jj) << "    ";
-	  }
-	  cout <<"\n";
-	}
-	cout << "\n";*/
 	cout << "servo rate: " << actual_servo_rate << "\n";
       }
     }

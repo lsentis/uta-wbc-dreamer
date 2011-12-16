@@ -244,10 +244,11 @@ namespace opspace {
     
   protected:
     Vector selection_;
-    double kp_;
-    double kd_;
+    Vector kp_;
+    Vector kd_;
     bool initialized_;
     std::vector<size_t> active_joints_;
+    Vector goalpos_;
   };
   
   
@@ -452,38 +453,22 @@ namespace opspace {
     Vector eepos_;		// just for logging...
   };
 
-  class TestPurePosTask
+  /** 
+      Cartesian positioning task with no velocity saturation
+
+      Parameters
+      - end_effector(int): end effector id number
+      - kp(vector): position gain
+      - kd(vector): velocity gain
+      - control_point(vector): reference point wrt given end effector
+      - goalpos(vector): goal position
+
+   */
+  class PureCartPosTask
     : public Task
   {
   public:
-    explicit TestPurePosTask(std::string const & name);
-
-    virtual Status init(Model const & model);
-    virtual Status update(Model const & model);
-
-    virtual void dbg(std::ostream & os,
-		     std::string const & title,
-		     std::string const & prefix) const;
-
-  protected:
-    virtual taoDNode const * updateActual(Model const & model);
-
-    int end_effector_id_;
-    double kp_;
-    double kd_;
-    int time_;
-    Vector control_point_;
-    mutable taoDNode const * end_effector_node_;
-    Vector center_position_;
-    double radius_;
-    double omega_;
-  };
-
-  class TestVarGainCartPosTask
-    : public Task
-  {
-  public:
-    explicit TestVarGainCartPosTask(std::string const & name);
+    explicit PureCartPosTask(std::string const & name);
 
     virtual Status init(Model const & model);
     virtual Status update(Model const & model);
@@ -502,6 +487,86 @@ namespace opspace {
     Vector goalpos_;
     Vector goalvel_;
   };
+
+  /**
+     Joint space positioning task with no velocity saturation
+   */
+ class PureJPosTask
+    : public Task
+  {
+  public:
+    explicit PureJPosTask(std::string const & name);
+
+    virtual Status init(Model const & model);
+    virtual Status update(Model const & model);
+    virtual void dbg(std::ostream & os,
+		     std::string const & title,
+		     std::string const & prefix) const;
+
+  protected:
+    Vector kp_;
+    Vector kd_;
+    Vector goalpos_;
+  };
+
+  /**
+     Joint space positioning using acceleration bounded trajectories
+     with no velocity saturation
+   */
+  class PureJPosTrjTask
+    : public Task
+  {
+  public:
+    virtual ~PureJPosTrjTask();
+    explicit PureJPosTrjTask(std::string const & name);
+
+    virtual Status init(Model const & model);
+    virtual Status update(Model const & model);
+    virtual void dbg(std::ostream & os,
+		     std::string const & title,
+		     std::string const & prefix) const;
+    
+    Vector kp_;
+    Vector kd_;
+    TypeIOTGCursor * cursor_;
+    double dt_seconds_;
+    Vector trjgoal_;
+    Vector maxacc_;
+    Vector maxvel_;
+  };
+
+  /**
+     Cartesian space positioning using acceleration bounded trajectories
+     with no velocity saturation
+   */
+  class PureCartPosTrjTask
+    : public Task
+  {
+  public:
+    virtual ~PureCartPosTrjTask();
+    explicit PureCartPosTrjTask(std::string const & name);
+
+    virtual Status init(Model const & model);
+    virtual Status update(Model const & model);
+    virtual void dbg(std::ostream & os,
+		     std::string const & title,
+		     std::string const & prefix) const;
+
+  protected:
+    virtual taoDNode const * updateActual(Model const & model);
+    int end_effector_id_;
+    Vector kp_;
+    Vector kd_;
+    Vector control_point_;
+    mutable taoDNode const * end_effector_node_;
+    TypeIOTGCursor * cursor_;
+    double dt_seconds_;
+    Vector trjgoal_;
+    Vector maxacc_;
+    Vector maxvel_;
+
+  };
+
 
   class TestCartForcePosTask
     : public Task
@@ -528,11 +593,54 @@ namespace opspace {
 
   };
 
-  class TestPureJointTask
+  /** 
+      Feed Forward cartesian circle following task. Follows a 
+      circlular path in 3d space at a given speed and radius.
+
+      Parameters
+      - end_effector(int): end effector id number
+      - kp(vector): position gain
+      - kd(vector): velocity gain
+      - control_point(vector): reference point wrt given end effector
+      - center_position(vector): center point of circle
+      - radius(float): radius of circle
+      - omega(float): frequency of rotation
+      - xdir(vector)
+      - ydir(vector) Together xdir and ydir define the plane of the circle
+
+   */
+  class TestFFCartCircleTask
     : public Task
   {
   public:
-    explicit TestPureJointTask(std::string const & name);
+    explicit TestFFCartCircleTask(std::string const & name);
+
+    virtual Status init(Model const & model);
+    virtual Status update(Model const & model);
+
+    virtual void dbg(std::ostream & os,
+		     std::string const & title,
+		     std::string const & prefix) const;
+
+  protected:
+    virtual taoDNode const * updateActual(Model const & model);
+
+    int end_effector_id_;
+    double kp_;
+    double kd_;
+    int time_;
+    Vector control_point_;
+    mutable taoDNode const * end_effector_node_;
+    Vector center_position_;
+    double radius_;
+    double omega_;
+  };
+
+  class TestSpherePosTask
+    : public Task
+  {
+  public:
+    explicit TestSpherePosTask(std::string const & name);
 
     virtual Status init(Model const & model);
     virtual Status update(Model const & model);
@@ -541,38 +649,145 @@ namespace opspace {
 		     std::string const & prefix) const;
 
   protected:
-    Vector kp_;
-    Vector kd_;
-    Vector selection_;
-    double amplitude_;
-    double omega_;
-    Vector goalpos_;
-
-    int t;
+    virtual taoDNode const * updateActual(Model const & model);
+    int end_effector_id_;
+    double kp_;
+    double kd_;
+    Vector control_point_;
+    mutable taoDNode const * end_effector_node_;
+    Vector center_position_;
+    double goalradius_;
+    double radius_;
+    double rdot_;
   };
 
-  class TestPureJPosTrajTask
+  class TestRemoteControlTask
     : public Task
   {
   public:
-    virtual ~TestPureJPosTrajTask();
-    explicit TestPureJPosTrajTask(std::string const & name);
+    explicit TestRemoteControlTask(std::string const & name);
 
     virtual Status init(Model const & model);
     virtual Status update(Model const & model);
     virtual void dbg(std::ostream & os,
 		     std::string const & title,
 		     std::string const & prefix) const;
+
+  protected:
+    virtual taoDNode const * updateActual(Model const & model);
+    int end_effector_id_;
+    Vector control_point_;
+    mutable taoDNode const * end_effector_node_;
+    Vector kp_;
+  };
+
+ class TestPositionOrientationTask
+    : public Task
+  {
+  public:
+    explicit TestPositionOrientationTask(std::string const & name);
     
+    virtual Status init(Model const & model);
+    virtual Status update(Model const & model);
+    
+    virtual void dbg(std::ostream & os,
+		     std::string const & title,
+		     std::string const & prefix) const;
+    
+  protected:
+    taoDNode const * updateActual(Model const & model);
+    
+    //// Added to allow goal changes
+    Vector vgoal_x;
+    Vector vgoal_y;
+    Vector vgoal_z;
+    ////
+    Eigen::Vector3d goal_x_;
+    Eigen::Vector3d goal_y_;
+    Eigen::Vector3d goal_z_;
+    Eigen::Vector3d actual_x_;
+    Eigen::Vector3d actual_y_;
+    Eigen::Vector3d actual_z_;
+    Vector eepos_;
+    Vector goalpos_;
+    Vector velocity_;
+    Vector delta_;		// instantaneous angular difference
+    int end_effector_id_;
     Vector kp_;
     Vector kd_;
+  };
+
+  class TestBaseControlTask
+    : public Task
+  {
+  public:
+    virtual ~TestBaseControlTask();
+    explicit TestBaseControlTask(std::string const & name);
+
+    virtual Status init(Model const & model);
+    virtual Status update(Model const & model);
+    virtual void dbg(std::ostream & os,
+		     std::string const & title,
+		     std::string const & prefix) const;
+
+  protected:
+    virtual taoDNode const * updateActual(Model const & model);
+    int end_effector_id_;
+    Vector kp_;
+    Vector kd_;
+    Vector control_point_;
+    mutable taoDNode const * end_effector_node_;
     TypeIOTGCursor * cursor_;
     double dt_seconds_;
     Vector trjgoal_;
     Vector maxacc_;
     Vector maxvel_;
+    Vector tau_sensor_;
+
   };
 
+  class TestRemoteVelControlTask
+    : public Task
+  {
+  public:
+    explicit TestRemoteVelControlTask(std::string const & name);
+
+    virtual Status init(Model const & model);
+    virtual Status update(Model const & model);
+    virtual void dbg(std::ostream & os,
+		     std::string const & title,
+		     std::string const & prefix) const;
+
+  protected:
+    virtual taoDNode const * updateActual(Model const & model);
+    int end_effector_id_;
+    Vector control_point_;
+    mutable taoDNode const * end_effector_node_;
+    Vector kp_;
+    Vector vdes_;
+  };
+
+  class TestRelativeCOMTask
+    : public Task
+  {
+  public:
+    explicit TestRelativeCOMTask(std::string const & name);
+
+    virtual Status init(Model const & model);
+    virtual Status update(Model const & model);
+    virtual void dbg(std::ostream & os,
+		     std::string const & title,
+		     std::string const & prefix) const;
+
+  protected:
+    virtual taoDNode const * updateActual(Model const & model);
+    int end_effector_id_;
+    Vector control_point_;
+    mutable taoDNode const * end_effector_node_;
+    Vector kp_;
+    Vector kd_;
+    Vector COM_;
+  };
 }
 
 #endif // OPSPACE_TASK_LIBRARY_HPP

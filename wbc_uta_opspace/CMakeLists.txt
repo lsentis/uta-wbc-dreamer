@@ -16,16 +16,10 @@ rosbuild_add_library (wbc_uta_opspace
   uta_opspace/ControllerNG.cpp
   uta_opspace/HelloGoodbyeSkill.cpp
   uta_opspace/DelayHistogram.cpp
-  uta_opspace/TaskPostureSkill.cpp
+  uta_opspace/TaskOriPostureSkill.cpp
   uta_opspace/WriteSkill.cpp
   uta_opspace/LetterManager.cpp
-  uta_opspace/StaticAccuracyTest.cpp
-  uta_opspace/DynamicAccuracyTest.cpp
-  uta_opspace/TrajAccuracyTest.cpp
-  uta_opspace/CircleTest.cpp
-  uta_opspace/GestureSkill.cpp
-  uta_opspace/JointTest.cpp
-  uta_opspace/CoffeeGrindSkill.cpp
-  uta_opspace/Reach.cpp
-  uta_opspace/MultiJointPos.cpp
+  uta_opspace/CartMultiPos.cpp
+  uta_opspace/JointMultiPos.cpp
+  uta_opspace/BaseMultiPos.cpp
   )

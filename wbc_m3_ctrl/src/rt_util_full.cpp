@@ -42,7 +42,8 @@
 #include <rtai_nam2num.h>
 #include <rtai_registry.h>
 
-#include "m3/shared_mem/torque_shm_sds.h"
+//#include "m3/shared_mem/torque_shm_sds.h"
+#include "m3uta/controllers/torque_shm_uta_sds.h"
 #include "m3/robots/chain_name.h"
 #include <m3rt/base/m3ec_def.h>
 #include <m3rt/base/m3rt_def.h>
@@ -68,14 +69,13 @@ namespace wbc_m3_ctrl {
     SEM * status_sem;
     SEM * command_sem;
     RTUtilFull * rtutil((RTUtilFull*) arg);
-    M3TorqueShmSdsStatus shm_status;
-    M3TorqueShmSdsCommand shm_cmd;
-    jspace::State arm_state(7, 7, 6);
-    jspace::State torso_state(2, 2, 6);
-    jspace::State head_state(12,12,6);
-    jspace::State hand_state(5,5,6);
-    jspace::Vector arm_command(7);
-    jspace::Vector torso_command(2);
+    M3UTATorqueShmSdsStatus shm_status;
+    M3UTATorqueShmSdsCommand shm_cmd;
+    
+    jspace::State body_state(12, 12, 6);
+    jspace::State head_state(12, 12, 6);
+    jspace::State hand_state( 5,  5, 6);
+    jspace::Vector body_command(12);
     jspace::Vector head_command(12);
     jspace::Vector hand_command(5);
     RTIME tick_period;
@@ -126,20 +126,35 @@ namespace wbc_m3_ctrl {
     rt_sem_wait(status_sem);
     memcpy(&shm_status, sys->status, sizeof(shm_status));
     rt_sem_signal(status_sem);
-    for (size_t ii(0); ii < 7; ++ii) { // XXXX to do: hardcoded NDOF
-      arm_state.position_[ii] = M_PI * shm_status.right_arm.theta[ii] / 180.0;
-      arm_state.velocity_[ii] = M_PI * shm_status.right_arm.thetadot[ii] / 180.0;
+
+    for (size_t ii(0); ii < 3; ++ii) {
+      body_state.position_[ii] = M_PI * shm_status.mobile_base.theta[ii] / 180.0;
+      body_state.velocity_[ii] = M_PI * shm_status.mobile_base.thetadot[ii] / 180.0;
     }
-	
+
+    for (size_t kk(3); kk < 5; ++kk) {
+      body_state.position_[kk] = M_PI * shm_status.torso.theta[kk-3] / 180.0;
+      body_state.velocity_[kk] = M_PI * shm_status.torso.thetadot[kk-3] / 180.0;
+    }	
+
+    for (size_t ii(5); ii < 12; ++ii) { // XXXX to do: hardcoded NDOF
+      body_state.position_[ii] = M_PI * shm_status.right_arm.theta[ii-5] / 180.0;
+      body_state.velocity_[ii] = M_PI * shm_status.right_arm.thetadot[ii-5] / 180.0;
+    }	
+
     ///Force-Torque Sensor
     for (size_t jj(0); jj < 6; ++jj) {
-      arm_state.force_[jj] = 1.0e-3 * shm_status.right_arm.wrench[jj];
+      body_state.force_[jj] = 1.0e-3 * shm_status.right_arm.wrench[jj];
     }
-    
-    for (size_t kk(0); kk < 2; ++kk) {
-      torso_state.position_[kk] = M_PI * shm_status.torso.theta[kk] / 180.0;
-      torso_state.velocity_[kk] = M_PI * shm_status.torso.thetadot[kk] / 180.0;
-    }	
+
+    for (size_t ii(0); ii < 3; ++ii) {
+      body_state.accelerometer_[ii] = shm_status.mobile_base.imu.accelerometer[ii];
+      body_state.magnetometer_[ii] = shm_status.mobile_base.imu.magnetometer[ii];
+      body_state.ang_vel_[ii] = shm_status.mobile_base.imu.ang_vel[ii];
+      for (size_t jj(0); jj < 3; ++jj) {
+	body_state.orientation_mtx_(ii,jj) = shm_status.mobile_base.imu.orientation_mtx[3*ii+jj];
+      }
+    }
 
     for (size_t ii(0); ii < 12; ++ii) {
       head_state.position_[ii] = M_PI * shm_status.head.theta[ii] / 180.0;
@@ -151,7 +166,7 @@ namespace wbc_m3_ctrl {
       hand_state.velocity_[ii] = M_PI * shm_status.right_hand.thetadot[ii] / 180.0;
     }
 
-    cb_status = rtutil->init(head_state, arm_state, hand_state, torso_state);
+    cb_status = rtutil->init(body_state, head_state, hand_state);
     if (0 != cb_status) {
       fprintf(stderr, "init callback returned %d\n", cb_status);
       rt_thread_state = RT_THREAD_ERROR;
@@ -184,20 +199,77 @@ namespace wbc_m3_ctrl {
       rt_sem_wait(status_sem);
       memcpy(&shm_status, sys->status, sizeof(shm_status));
       rt_sem_signal(status_sem);
-      for (size_t ii(0); ii < 7; ++ii) { // XXXX to do: hardcoded NDOF
-	arm_state.position_[ii] = M_PI * shm_status.right_arm.theta[ii] / 180.0;
-	arm_state.velocity_[ii] = M_PI * shm_status.right_arm.thetadot[ii] / 180.0;
+
+      for (size_t ii(0); ii < 3; ++ii) {
+	body_state.position_[ii] = M_PI * shm_status.mobile_base.theta[ii] / 180.0;
+	body_state.velocity_[ii] = M_PI * shm_status.mobile_base.thetadot[ii] / 180.0;
       }
+      
+      for (size_t kk(3); kk < 5; ++kk) {
+	body_state.position_[kk] = M_PI * shm_status.torso.theta[kk-3] / 180.0;
+	body_state.velocity_[kk] = M_PI * shm_status.torso.thetadot[kk-3] / 180.0;
+      }	
+      
+      for (size_t ii(5); ii < 12; ++ii) { // XXXX to do: hardcoded NDOF
+	body_state.position_[ii] = M_PI * shm_status.right_arm.theta[ii-5] / 180.0;
+	body_state.velocity_[ii] = M_PI * shm_status.right_arm.thetadot[ii-5] / 180.0;
+      }	
 
       ///Force-Torque Sensor
       for (size_t jj(0); jj < 6; ++jj) {
-	arm_state.force_[jj] = 1.0e-3 * shm_status.right_arm.wrench[jj];
+	body_state.force_[jj] = 1.0e-3 * shm_status.right_arm.wrench[jj];
       }
+
+      jspace::Matrix mtx2(jspace::Matrix::Zero(3,3));
+      for (size_t ii(0); ii < 3; ++ii) {
+	body_state.accelerometer_[ii] = shm_status.mobile_base.imu.accelerometer[ii];
+	body_state.magnetometer_[ii] = shm_status.mobile_base.imu.magnetometer[ii];
+	body_state.ang_vel_[ii] = shm_status.mobile_base.imu.ang_vel[ii];
+	for (size_t jj(0); jj < 3; ++jj) {
+	  mtx2(ii,jj) = shm_status.mobile_base.imu.orientation_mtx[3*ii+jj];
+	}
+      }
+
+      jspace::Matrix R(jspace::Matrix::Zero(3,3));
+      R(0,0) = -1;
+      R(1,1) = 1;
+      R(2,2) = -1;
+
+      body_state.orientation_mtx_ = R *mtx2;
+
+
+      /*
+      std::cout << "Ori:\n";
+      for (size_t ii(0); ii< body_state.orientation_mtx_.rows(); ++ii) {
+	for (size_t jj(0); jj < body_state.orientation_mtx_.cols(); ++jj) {
+	  std::cout << body_state.orientation_mtx_(ii,jj) << "  ";
+	}
+	std::cout << "\n";
+      }*/
+
+      //body_state.orientation_mtx_ = jspace::Matrix::Identity(3,3);
       
-      for (size_t kk(0); kk < 2; ++kk) {
-	torso_state.position_[kk] = M_PI * shm_status.torso.theta[kk] / 180.0;
-	torso_state.velocity_[kk] = M_PI * shm_status.torso.thetadot[kk] / 180.0;
-      }	
+      /*body_state.orientation_mtx_(0,0) = cos(-0.175);
+      body_state.orientation_mtx_(0,1) = 0;     
+      body_state.orientation_mtx_(0,2) = sin(-0.175);
+      body_state.orientation_mtx_(1,0) = 0;
+      body_state.orientation_mtx_(1,1) = 1;
+      body_state.orientation_mtx_(1,2) = 0;
+      body_state.orientation_mtx_(2,0) = -sin(-0.175);
+      body_state.orientation_mtx_(2,1) = 0;
+      body_state.orientation_mtx_(2,2) = cos(-0.175);*/
+
+
+      /*      body_state.orientation_mtx_(0,0) = 0.976;
+      body_state.orientation_mtx_(0,1) = -0.1;     
+      body_state.orientation_mtx_(0,2) = -0.192;
+      body_state.orientation_mtx_(1,0) = 0.1;
+      body_state.orientation_mtx_(1,1) = 0.995;
+      body_state.orientation_mtx_(1,2) = 0.00136;
+      body_state.orientation_mtx_(2,0) = 0.192;
+      body_state.orientation_mtx_(2,1) = -0.00136;
+      body_state.orientation_mtx_(2,2) = 0.981;*/
+      
       
       for (size_t ii(0); ii < 12; ++ii) {
 	head_state.position_[ii] = M_PI * shm_status.head.theta[ii] / 180.0;
@@ -216,7 +288,7 @@ namespace wbc_m3_ctrl {
 	continue;
       }
 
-      cb_status = rtutil->update(head_state, head_command, arm_state, arm_command, hand_state, hand_command, torso_state, torso_command);
+      cb_status = rtutil->update(body_state, body_command, head_state, head_command, hand_state, hand_command);
       if (0 != cb_status) {
 	fprintf(stderr, "update callback returned %d\n", cb_status);
 	rt_thread_state = RT_THREAD_ERROR;
@@ -224,12 +296,17 @@ namespace wbc_m3_ctrl {
 	continue;
       }
       
-      for (size_t ii(0); ii < 7; ++ii) { // XXXX to do: hardcoded NDOF
-	shm_cmd.right_arm.tq_desired[ii] = 1.0e3 * arm_command[ii];
+
+      for (size_t ii(0); ii < 3; ++ii) {
+	shm_cmd.mobile_base.tq_desired[ii] = 1.0e3 * (body_command[ii] / 1.8619);
       }
-      
-      for (size_t ii(0); ii < 2; ++ii) {
-	shm_cmd.torso.tq_desired[ii] = 1.0e3 * torso_command[ii];
+
+     for (size_t ii(0); ii < 2; ++ii) {
+	shm_cmd.torso.tq_desired[ii] = 1.0e3 * body_command[ii+3];
+      }
+
+      for (size_t ii(0); ii < 7; ++ii) { // XXXX to do: hardcoded NDOF
+	shm_cmd.right_arm.tq_desired[ii] = 1.0e3 * body_command[ii+5];
       }
       
       for (size_t ii(0); ii < 12; ++ii) {
@@ -237,14 +314,13 @@ namespace wbc_m3_ctrl {
 	shm_cmd.head.slew_rate_q_desired[ii] = 10;
       }
       
+      
       shm_cmd.right_hand.q_desired[0] = 180.0 * hand_command[0] / M_PI;
       shm_cmd.right_hand.slew_rate_q_desired[0] = 10;
+      shm_cmd.right_hand.q_stiffness[0] = 1;
       for (size_t ii(1); ii < 5; ++ii) {
-	shm_cmd.right_hand.tq_desired[ii-1] = 1.0e3 * hand_command[ii];
-	shm_cmd.right_hand.q_stiffness[ii-1] = 1;
+	shm_cmd.right_hand.tq_desired[ii] = 1.0e3 * hand_command[ii];
       }
-      
-      
 
       shm_cmd.timestamp = shm_status.timestamp;
       rt_sem_wait(command_sem);

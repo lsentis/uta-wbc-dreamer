@@ -99,10 +99,11 @@
 		<rot>1, 0, 0, 0</rot>
 		<pos>0.0, 0.0, 0.0</pos>
 		<mass>42.11294</mass>
+		<!--<mass>2</mass>-->
 		<inertia>2.19358, 1.77776, 2.11002</inertia>
 		<com>-0.0328, 0.009318, 0.308534</com>
-		<rotorInertia>0</rotorInertia>
 		<gearRatio>0</gearRatio>
+		<rotorInertia>0</rotorInertia>
 		<constrained>1</constrained>
 
 		<jointNode>
@@ -114,11 +115,12 @@
 		  <type>r</type>
 		  <rot>0, 0, 1, -1.04720</rot>
 		  <pos>-0.23524, 0.16775, 0.0</pos>
-		  <mass>1.963211</mass>
+		  <!--<mass>1.963211</mass>-->
+		  <mass>0.0001</mass>
 		  <inertia>0.009127, 0.00483, 0.004722</inertia>
 		  <com>0.0, 0.0, 0.0</com>
-		  <rotorInertia>0</rotorInertia>
-		  <gearRatio>0</gearRatio>
+		  <rotorInertia>0.0000209</rotorInertia>
+		  <gearRatio>43</gearRatio>
 		  <constrained>0</constrained>
 		</jointNode>
 
@@ -131,11 +133,12 @@
 		  <type>r</type>
 		  <rot>0, 0, 1, 1.04720</rot>
 		  <pos>-0.23524, -0.16775, 0.0</pos>
-		  <mass>1.963211</mass>
+		  <!-- <mass>1.963211</mass>-->
+		  <mass>0.0001</mass>
 		  <inertia>0.009127, 0.00483, 0.004722</inertia>
 		  <com>0.0, 0.0, 0.0</com>
-		  <rotorInertia>0</rotorInertia>
-		  <gearRatio>0</gearRatio>
+		  <rotorInertia>0.0000209</rotorInertia>
+		  <gearRatio>43</gearRatio>
 		  <constrained>0</constrained>
 		</jointNode>
 
@@ -148,11 +151,12 @@
 		  <type>r</type>
 		  <rot>0, 0, 1, 3.14159</rot>
 		  <pos>0.288925, 0.0, 0.0</pos>
-		  <mass>1.963211</mass>
+		  <!--<mass>1.963211</mass>-->
+		  <mass>0.0001</mass>		  
 		  <inertia>0.009127, 0.00483, 0.004722</inertia>
-		  <com>0.0, 0.0, 0.0</com>	
-		  <rotorInertia>0</rotorInertia>
-		  <gearRatio>0</gearRatio>
+		  <com>0.0, 0.0, 0.0</com>
+		  <rotorInertia>0.0000209</rotorInertia>
+		  <gearRatio>43</gearRatio>
 		  <constrained>0</constrained>
 		</jointNode>
 

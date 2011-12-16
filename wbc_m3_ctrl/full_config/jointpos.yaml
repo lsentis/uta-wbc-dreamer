@@ -1,8 +1,8 @@
 - tasks:
   - type: opspace::PureJPosTrjTask
     name: jpos
-    kp: [   5.0 ]
-    kd: [   0.1 ]
+    kp: [  2.0, 2.0, 2.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0 ]
+    kd: [  0.1 ]
     dt_seconds: 0.0025
     maxvel: [ 1.5 ]
     maxacc: [ 2.0 ]

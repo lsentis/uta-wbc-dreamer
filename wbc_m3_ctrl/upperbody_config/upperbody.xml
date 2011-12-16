@@ -56,6 +56,7 @@
 	  <!--<mass>8.0</mass>
 	  <inertia>0.082, 0.35, 0.30</inertia>
 	  <com>0.27, 0.00870, 0.01147</com>-->
+	  <!-- esimates adding in the head -->
 	  <mass>13.845</mass>
 	  <inertia>0.84656, 0.17555, 0.15361</inertia>
 	  <com>0.31652, 0.00393, 0.00517</com>

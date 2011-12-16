@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2011 University of Texas at Austin. All rights reserved.
  *
- * Author: Roland Philippsen
+ * Author: Josh Petersen and Roland Philippsen
  *
  * BSD license:
  * Redistribution and use in source and binary forms, with or without
@@ -49,17 +49,10 @@
 #include <opspace/Factory.hpp>
 #include <uta_opspace/ControllerNG.hpp>
 #include <uta_opspace/HelloGoodbyeSkill.hpp>
-#include <uta_opspace/TaskPostureSkill.hpp>
+#include <uta_opspace/TaskOriPostureSkill.hpp>
 #include <uta_opspace/WriteSkill.hpp>
-#include <uta_opspace/StaticAccuracyTest.hpp>
-#include <uta_opspace/DynamicAccuracyTest.hpp>
-#include <uta_opspace/TrajAccuracyTest.hpp>
-#include <uta_opspace/CircleTest.hpp>
-#include <uta_opspace/GestureSkill.hpp>
-#include <uta_opspace/JointTest.hpp>
-#include <uta_opspace/MultiJointPos.hpp>
-#include <uta_opspace/Reach.hpp>
-#include <uta_opspace/CoffeeGrindSkill.hpp>
+#include <uta_opspace/JointMultiPos.hpp>
+#include <uta_opspace/CartMultiPos.hpp>
 #include <wbc_core/opspace_param_callbacks.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <err.h>
@@ -110,7 +103,6 @@ static long long actual_servo_rate;
 static shared_ptr<ParamCallbacks> param_cbs;
 static shared_ptr<ControllerNG> controller;
 static HeadController* head_controller;
-static TorsoController* torso_controller;
 static HandController* hand_controller;
 
 
@@ -253,10 +245,9 @@ namespace {
   public:
     shared_ptr<Skill> skill;
     
-    virtual int init(jspace::State const & head_state,
-		     jspace::State const & arm_state,
-		     jspace::State const & hand_state,
-		     jspace::State const & torso_state) {
+    virtual int init(jspace::State const & body_state,
+		     jspace::State const & head_state,
+		     jspace::State const & hand_state) {
       if (skill) {
 	warnx("Servo::init(): already initialized");
 	return -1;
@@ -270,7 +261,11 @@ namespace {
 	return -3;
       }
       
-      model->update(arm_state);
+      if (!model->setConstraint("Dreamer_Full")) {
+	warnx("Servo::init(): model->setConstraint() failed: Is the Constraint defined?");
+	return -4;
+      }
+      model->update(body_state);
     
       jspace::Status status(controller->init(*model));
       if ( ! status) {
@@ -287,16 +282,10 @@ namespace {
 
       head_controller = new HeadController();
       hand_controller = new HandController();
-      torso_controller = new TorsoController();
 
       status = head_controller->init(head_state);
       if ( ! status) {
 	warnx("Servo::init(): head_controller->init() failed: %s", status.errstr.c_str());
-	return -4;
-      }
-      status = torso_controller->init(torso_state);
-      if ( ! status) {
-	warnx("Servo::init(): torso_controller->init() failed: %s", status.errstr.c_str());
 	return -4;
       }
       status = hand_controller->init(hand_state);
@@ -308,46 +297,30 @@ namespace {
     }
     
     
-    virtual int update(jspace::State const & head_state,
+    virtual int update(jspace::State const & body_state,
+		       jspace::Vector & body_command,
+		       jspace::State const & head_state,
 		       jspace::Vector & head_command,
-		       jspace::State const & arm_state,
-		       jspace::Vector & arm_command,
 		       jspace::State const & hand_state,
-		       jspace::Vector & hand_command,
-		       jspace::State const & torso_state,
-		       jspace::Vector & torso_command)
+		       jspace::Vector & hand_command)
     {
       if ( ! skill) {
 	warnx("Servo::update(): not initialized\n");
 	return -1;
       }
       
-      model->update(arm_state);
+      model->update(body_state);
       
-      jspace::Status status(controller->computeCommand(*model, *skill, arm_command));
+      jspace::Status status(controller->computeCommand(*model, *skill, body_command));
       if ( ! status) {
 	warnx("Servo::update(): controller->computeCommand() failed: %s", status.errstr.c_str());
 	return -2;
       }
 
-      jspace::Transform gl_trans;
-      if ( ! model->computeGlobalFrame(model->getNode(6),jspace::Vector::Zero(3),gl_trans)) {
-	warnx("Servo::Update(): model->computeGlobalFrame() failed");
-	return -2;
-      }
-      
-      Vector eepos(gl_trans.translation());
       head_controller->update(head_state);
       status = head_controller->computeCommand(head_command);
       if ( ! status) {
 	warnx("Servo::update(): head_controller->computeCommand() failed: %s", status.errstr.c_str());
-	return -2;
-      }
-
-      torso_controller->update(torso_state);
-      status = torso_controller->computeCommand(torso_command);
-      if ( ! status) {
-	warnx("Servo::update(): torso_controller->computeCommand() failed: %s", status.errstr.c_str());
 	return -2;
       }
 
@@ -393,17 +366,9 @@ int main(int argc, char ** argv)
   // file, we need to inform the static type registry about custom
   // additions such as the HelloGoodbyeSkill.
   Factory::addSkillType<uta_opspace::HelloGoodbyeSkill>("uta_opspace::HelloGoodbyeSkill");
-  Factory::addSkillType<uta_opspace::TaskPostureSkill>("uta_opspace::TaskPostureSkill");
-  Factory::addSkillType<uta_opspace::WriteSkill>("uta_opspace::WriteSkill");
-  Factory::addSkillType<uta_opspace::StaticAccuracyTest>("uta_opspace::StaticAccuracyTest");
-  Factory::addSkillType<uta_opspace::DynamicAccuracyTest>("uta_opspace::DynamicAccuracyTest");
-  Factory::addSkillType<uta_opspace::TrajAccuracyTest>("uta_opspace::TrajAccuracyTest");
-  Factory::addSkillType<uta_opspace::CircleTest>("uta_opspace::CircleTest");
-  Factory::addSkillType<uta_opspace::GestureSkill>("uta_opspace::GestureSkill");
-  Factory::addSkillType<uta_opspace::JointTest>("uta_opspace::JointTest");
-  Factory::addSkillType<uta_opspace::MultiJointPos>("uta_opspace::MultiJointPos");
-  Factory::addSkillType<uta_opspace::Reach>("uta_opspace::Reach");
-  Factory::addSkillType<uta_opspace::CoffeeGrindSkill>("uta_opspace::CoffeeGrindSkill");
+  Factory::addSkillType<uta_opspace::TaskOriPostureSkill>("uta_opspace::TaskOriPostureSkill");
+  Factory::addSkillType<uta_opspace::JointMultiPos>("uta_opspace::JointMultiPos");
+  Factory::addSkillType<uta_opspace::CartMultiPos>("uta_opspace::CartMultiPos");
   
   ros::init(argc, argv, "wbc_m3_ctrl_servo", ros::init_options::NoSigintHandler);
   parse_options(argc, argv);
@@ -441,25 +406,35 @@ int main(int argc, char ** argv)
     if (verbose) {
       if (t1 - dbg_t0 > dbg_dt) {
 	dbg_t0 = t1;
-	servo.skill->dbg(cout, "\n\n**************************************************", "");
+	
+	/*servo.skill->dbg(cout, "\n\n**************************************************", "");
 	controller->dbg(cout, "--------------------------------------------------", "");
 	cout << "--------------------------------------------------\n";
-	jspace::pretty_print(model->getState().position_, cout, "arm jpos", "  ");
-	jspace::pretty_print(model->getState().velocity_, cout, "arm jvel", "  ");
+	jspace::pretty_print(model->getState().position_, cout, "body jpos", "  ");
+	jspace::pretty_print(model->getState().velocity_, cout, "body jvel", "  ");
 	jspace::pretty_print(model->getState().force_, cout, "jforce", "  ");
-	jspace::pretty_print(controller->getCommand(), cout, "arm gamma", "  ");
+	jspace::pretty_print(controller->getCommand(), cout, "body gamma", "  ");
 	jspace::pretty_print(head_controller->getState().position_, cout, "head jpos", "  ");
 	jspace::pretty_print(head_controller->getState().velocity_, cout, "head jvel", "  ");
 	jspace::pretty_print(head_controller->getCommand(), cout, "head command", "  ");
-	jspace::pretty_print(torso_controller->getState().position_, cout, "torso jpos", "  ");
-	jspace::pretty_print(torso_controller->getState().velocity_, cout, "torso jvel", "  ");
-	jspace::pretty_print(torso_controller->getCommand(), cout, "torso gamma", "  ");
 	jspace::pretty_print(hand_controller->getState().position_, cout, "hand jpos", "  ");
 	jspace::pretty_print(hand_controller->getState().velocity_, cout, "hand jvel", "  ");
 	jspace::pretty_print(hand_controller->getCommand(), cout, "hand gamma", "  ");
 	Vector gravity;
 	model->getGravity(gravity);
 	jspace::pretty_print(gravity, cout, "gravity", "  ");
+	*/
+	jspace::pretty_print(model->getFullState().position_, cout, "jpos", "  ");
+	jspace::pretty_print(model->getFullState().velocity_, cout, "jvel", "  ");
+	jspace::pretty_print(controller->getActual(), cout, "actual", "  ");
+	Matrix ori(model->getState().orientation_mtx_);
+	cout << "Ori:\n";
+	for (size_t ii(0); ii < ori.rows(); ++ii) {
+	  for (size_t jj(0); jj < ori.cols(); ++jj) {
+	    cout << ori(ii,jj) << "  ";
+	  }
+	  cout << "\n";
+	}
 	cout << "servo rate: " << actual_servo_rate << "\n";
       }
     }

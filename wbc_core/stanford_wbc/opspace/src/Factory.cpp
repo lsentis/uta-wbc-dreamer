@@ -49,11 +49,19 @@ namespace opspace {
     Factory::addTaskType<opspace::JointLimitTask>("opspace::JointLimitTask");
     Factory::addTaskType<opspace::OrientationTask>("opspace::OrientationTask");
     Factory::addTaskType<opspace::DraftPIDTask>("opspace::DraftPIDTask");
-    Factory::addTaskType<opspace::TestPurePosTask>("opspace::TestPurePosTask");
-    Factory::addTaskType<opspace::TestVarGainCartPosTask>("opspace::TestVarGainCartPosTask");
+
+    Factory::addTaskType<opspace::PureCartPosTask>("opspace::PureCartPosTask");
+    Factory::addTaskType<opspace::PureJPosTask>("opspace::PureJPosTask");
+    Factory::addTaskType<opspace::PureJPosTrjTask>("opspace::PureJPosTrjTask");
+    Factory::addTaskType<opspace::PureCartPosTrjTask>("opspace::PureCartPosTrjTask");
     Factory::addTaskType<opspace::TestCartForcePosTask>("opspace::TestCartForcePosTask");
-    Factory::addTaskType<opspace::TestPureJointTask>("opspace::TestPureJointTask");
-    Factory::addTaskType<opspace::TestPureJPosTrajTask>("opspace::TestPureJPosTrajTask");
+    Factory::addTaskType<opspace::TestFFCartCircleTask>("opspace::TestFFCartCircleTask");
+    Factory::addTaskType<opspace::TestSpherePosTask>("opspace::TestSpherePosTask");
+    Factory::addTaskType<opspace::TestRemoteControlTask>("opspace::TestRemoteControlTask"); 
+    Factory::addTaskType<opspace::TestPositionOrientationTask>("opspace::TestPositionOrientationTask"); 
+    Factory::addTaskType<opspace::TestBaseControlTask>("opspace::TestBaseControlTask");
+    Factory::addTaskType<opspace::TestRemoteVelControlTask>("opspace::TestRemoteVelControlTask"); 
+    Factory::addTaskType<opspace::TestRelativeCOMTask>("opspace::TestRelativeCOMTask");
 
     Factory::addSkillType<opspace::GenericSkill>("opspace::GenericSkill");
     Factory::addSkillType<opspace::TaskPostureSkill>("opspace::TaskPostureSkill");

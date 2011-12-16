@@ -1,4 +1,0 @@
----
-string mq_name_servo_to_pump
-string mq_name_pump_to_servo
-string[] joint_name

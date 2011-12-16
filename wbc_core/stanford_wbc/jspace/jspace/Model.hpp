@@ -21,6 +21,7 @@
 /**
    \file jspace/Model.hpp
    \author Roland Philippsen, inspired by wbc/core code of Luis Sentis
+   \modified by Josh Petersen
 */
 
 #ifndef JSPACE_MODEL_HPP
@@ -33,6 +34,7 @@
 #include <list>
 #include <map>
 #include <set>
+#include <jspace/constraint_library.hpp>
 
 // Clients of Model never really need to worry about what exactly lies
 // behind TAO, they can treat this as an opaque pointer type.
@@ -40,8 +42,7 @@ class taoDNode;
 class taoJoint;
 
 namespace jspace {
-  
-  
+
   // declared in <jspace/tao_util.hpp>
   struct tao_tree_info_s;
   
@@ -88,6 +89,13 @@ namespace jspace {
 	     /** Optional stream that will receive error messages from
 		 the consistency checks. */
 	     std::ostream * msg);
+
+    /* Set the constraint type
+       returns 1 if constraint is found
+       0 otherwise
+    */
+
+    int setConstraint(std::string constraint);
     
     //////////////////////////////////////////////////
     // fire-and-forget facet
@@ -116,12 +124,20 @@ namespace jspace {
 	has too few dimensions, then some positions and velocities of
 	the model will remain at their old values. If there are too
 	many dimensions, they will be ignored.
+
+	The model only holds on to the state of the actuated DOF,
+	if constraints are defined the full model is updated with the
+	full DOF but using getState() only returns the actuated DOF
+	This makes it easier for the tasks to compute commmands
+
     */
     void setState(State const & state);
     
     /** Retrieve the state passed to setState() (or update(), for that
 	matter). */
     inline State const & getState() const { return state_; }
+
+    inline State const & getFullState() const { return fullstate_; }
     
     //////////////////////////////////////////////////
     // Bare tree accessors.
@@ -146,6 +162,21 @@ namespace jspace {
 	of freedom, which is why this method might return something
 	else than getNJoints(). */
     size_t getNDOF() const;
+
+    /** Compute or retrieve the cached number of unconstrained degrees
+	of freedom
+    */
+    size_t getUnconstrainedNDOF() const;
+
+    /**
+       Creates a vector for which values of 1 correspond 
+       to constrained DOF, 0 otherwise
+       Returns true if there are constrained DOF
+       false if there are none
+     */
+    bool getConstrained(Vector & constrained) const;
+
+    Constraint * getConstraint() const;
     
     /** Retrieve the name of a node. Returns an empty string in case
 	the id is invalid. Use getNNodes() to find out how many nodes
@@ -282,6 +313,13 @@ namespace jspace {
 				Vector const & global_point,
 				Matrix & jacobian) const
     { return computeJacobian(node, global_point[0], global_point[1], global_point[2], jacobian); }
+
+    /** Convience method for checking external calculations of the A 
+	matrix
+     */
+
+    bool computeJacobianCOM(int id,
+			    Matrix & jacobian) const;
     
     //////////////////////////////////////////////////
     // dynamics facet
@@ -296,6 +334,9 @@ namespace jspace {
 	computeJacobian() that happens for each node's contribution to
 	the Jacobian of the COM. */
     bool computeCOM(Vector & com, Matrix * opt_jcom) const;
+
+    // Non optional Jcom since I couldnt get the other to work quickly
+    bool computeCOM(Vector & com, Matrix & opt_jcom) const;
     
     /** Compute the gravity joint-torque vector. */
     void computeGravity();
@@ -374,10 +415,13 @@ namespace jspace {
     tao_tree_info_s * cc_tree_;
     
     State state_;
+    State fullstate_;
     Vector g_torque_;
     Vector cc_torque_;
+
     std::vector<double> a_upper_triangular_;
-    std::vector<double> ainv_upper_triangular_;
+    Matrix mass_inertia_;
+    Matrix inv_mass_inertia_;
     
     struct ancestry_entry_s {
       int id;
@@ -386,6 +430,9 @@ namespace jspace {
     typedef std::list<ancestry_entry_s> ancestry_list_t;
     typedef std::map<taoDNode *, ancestry_list_t> ancestry_table_t;
     ancestry_table_t ancestry_table_;
+    
+    Constraint * constraint_;
+
   };
   
 }
