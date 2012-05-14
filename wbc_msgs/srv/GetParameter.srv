@@ -1,0 +1,7 @@
+string com_type
+string com_name
+string param_name
+---
+OpspaceParameter param
+bool ok
+string errstr

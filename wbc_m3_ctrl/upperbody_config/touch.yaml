@@ -1,0 +1,36 @@
+- tasks:
+  - type: opspace::PureCartPosTrjTask
+    name: eepos1
+    end_effector: 9
+    control_point: [ 0.0, -0.05, 0.0 ]
+    dt_seconds : 0.0025
+    kp: [ 50.0 ]
+    kd: [  2.0 ]
+    maxvel: [ 0.45 ]
+    maxacc: [ 1.5 ]
+  - type: opspace::PureJPosTrjTask
+    name: posture1
+    kp: [ 30.0 ]
+    kd: [  1.0 ]
+    dt_seconds : 0.0025
+    maxvel: [ 1.5 ]
+    maxacc: [ 8.0 ]
+
+- skills:
+  - type: uta_opspace::CartMultiPos
+    name: touch
+    eepos: [ 0.20, -0.30, 0.06,
+	     0.30, -0.20, 0.30,
+	     0.40, -0.10, 0.06,
+	     0.50, -0.20, 0.30,
+	     0.65, -0.20, 0.08 ]
+    posture: [ 0.00, 0.00, 0.00, 0.00,  0.00, 1.65, 0.00, 0.00, 0.00,
+	       0.00, 0.00, 0.00, 0.60, -0.45, 1.57, 0.50, 0.00, 0.00,
+	       0.00, 0.00, 0.00, 0.60, -0.45, 1.57, 0.50, 0.00, 0.00,
+	       0.00, 0.00, 0.00, 0.60, -0.45, 1.57, 0.50, 0.00, 0.00,
+	       0.00, 0.00, 0.00, 0.60, -0.45, 1.57, 0.50, 0.00, 0.00]
+    threshold: 0.05
+    vel_threshold: 0.10
+    slots:
+      eepos: eepos1
+      posture: posture1

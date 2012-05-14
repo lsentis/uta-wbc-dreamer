@@ -1,0 +1,355 @@
+<?xml version="1.0" ?>
+
+<dynworld>
+
+  <baseNode>
+    <controller>2</controller>
+    <gravity>0, 0, -9.81</gravity>
+    <robotName>Dreamer</robotName>
+    <pos>0, 0, 0</pos>
+    <rot>1, 0, 0, 0</rot>
+
+    <jointNode>
+      <jointName>virtualp-x</jointName>
+      <linkName>virtualp-x</linkName>
+      <defaultJointPosition>0.0</defaultJointPosition>
+      <ID>0</ID>
+      <axis>x</axis>
+      <type>p</type>
+      <rot>1, 0, 0, 0</rot>
+      <pos>0.0, 0.0, 0.0</pos>
+      <mass>0.0001</mass>
+      <inertia>0.0, 0.0, 0.0</inertia>
+      <rotorInertia>0</rotorInertia>
+      <com>0.0, 0.0, 0.0</com>
+      <gearRatio>0</gearRatio>
+      <constrained>1</constrained>
+      
+      <jointNode>
+	<jointName>virtualp-y</jointName>
+	<linkName>virtualp-y</linkName>
+	<defaultJointPosition>0.0</defaultJointPosition>
+	<ID>1</ID>
+	<axis>y</axis>
+	<type>p</type>
+	<rot>1, 0, 0, 0</rot>
+	<pos>0.0, 0.0, 0.0</pos>
+	<mass>0.0001</mass>
+	<inertia>0.0, 0.0, 0.0</inertia>
+	<com>0.0, 0.0, 0.0</com>
+	<rotorInertia>0</rotorInertia>
+	<gearRatio>0</gearRatio>
+	<constrained>1</constrained>
+
+	<jointNode>
+	  <jointName>virtualp-z</jointName>
+	  <linkName>virtualp-z</linkName>
+	  <defaultJointPosition>0.0</defaultJointPosition>
+	  <ID>2</ID>
+	  <axis>z</axis>
+	  <type>p</type>
+	  <rot>1, 0, 0, 0</rot>
+	  <pos>0.0, 0.0, 0.0</pos>
+	  <mass>0.0001</mass>
+	  <inertia>0.0, 0.0, 0.0</inertia>
+	  <com>0.0, 0.0, 0.0</com>
+	  <rotorInertia>0</rotorInertia>
+	  <gearRatio>0</gearRatio>
+	  <constrained>1</constrained>
+
+	  <jointNode>
+	    <jointName>virtualr-x</jointName>
+	    <linkName>virtualr-x</linkName>
+	    <defaultJointPosition>0.0</defaultJointPosition>
+	    <ID>3</ID>
+	    <axis>x</axis>
+	    <type>r</type>
+	    <rot>1, 0, 0, 0</rot>
+	    <pos>0.0, 0.0, 0.0</pos>
+	    <mass>0.0001</mass>
+	    <inertia>0.0, 0.0, 0.0</inertia>
+	    <com>0.0, 0.0, 0.0</com>
+	    <rotorInertia>0</rotorInertia>
+	    <gearRatio>0</gearRatio>
+	    <constrained>1</constrained>
+	    
+	    <jointNode>
+	      <jointName>virtualr-y</jointName>
+	      <linkName>virtualr-y</linkName>
+	      <defaultJointPosition>0.0</defaultJointPosition>
+	      <ID>4</ID>
+	      <axis>y</axis>
+	      <type>r</type>
+	      <rot>1, 0, 0, 0</rot>
+	      <pos>0.0, 0.0, 0.0</pos>
+	      <mass>0.0001</mass>
+	      <inertia>0.0, 0.0, 0.0</inertia>
+	      <com>0.0, 0.0, 0.0</com>
+	      <rotorInertia>0</rotorInertia>
+	      <gearRatio>0</gearRatio>
+	      <constrained>1</constrained>
+	    
+	      <jointNode>
+		<jointName>virtualr-z</jointName>
+		<linkName>virtualr-z</linkName>
+		<defaultJointPosition>0.0</defaultJointPosition>
+		<ID>5</ID>
+		<axis>z</axis>
+		<type>r</type>
+		<rot>1, 0, 0, 0</rot>
+		<pos>0.0, 0.0, 0.0</pos>
+		<!-- this needs to be updated to include 
+		     mass of upperbody base -->
+		<mass>42.11294</mass>
+		<inertia>2.19358, 1.77776, 2.11002</inertia>
+		<com>-0.0328, 0.009318, 0.308534</com>
+		<gearRatio>0</gearRatio>
+		<rotorInertia>0</rotorInertia>
+		<constrained>1</constrained>
+
+		<jointNode>
+		  <jointName>wheel1</jointName>
+		  <linkName>wheel1</linkName>
+		  <defaultJointPosition>0.0</defaultJointPosition>
+		  <ID>6</ID>
+		  <axis>x</axis>
+		  <type>r</type>
+		  <rot>0, 0, 1, -1.04720</rot>
+		  <pos>-0.23524, 0.16775, 0.0</pos>
+		  <mass>1.963211</mass>
+		  <inertia>0.009127, 0.00483, 0.004722</inertia>
+		  <com>0.0, 0.0, 0.0</com>
+		  <rotorInertia>0.0000209</rotorInertia>
+		  <gearRatio>43</gearRatio>
+		  <constrained>0</constrained>
+		</jointNode>
+
+		<jointNode>
+		  <jointName>wheel2</jointName>
+		  <linkName>wheel2</linkName>
+		  <defaultJointPosition>0.0</defaultJointPosition>
+		  <ID>7</ID>
+		  <axis>x</axis>
+		  <type>r</type>
+		  <rot>0, 0, 1, 1.04720</rot>
+		  <pos>-0.23524, -0.16775, 0.0</pos>
+		  <mass>1.963211</mass>
+		  <inertia>0.009127, 0.00483, 0.004722</inertia>
+		  <com>0.0, 0.0, 0.0</com>
+		  <rotorInertia>0.0000209</rotorInertia>
+		  <gearRatio>43</gearRatio>
+		  <constrained>0</constrained>
+		</jointNode>
+
+		<jointNode>
+		  <jointName>wheel3</jointName>
+		  <linkName>wheel3</linkName>
+		  <defaultJointPosition>0.0</defaultJointPosition>
+		  <ID>8</ID>
+		  <axis>x</axis>
+		  <type>r</type>
+		  <rot>0, 0, 1, 3.14159</rot>
+		  <pos>0.288925, 0.0, 0.0</pos>
+		  <mass>1.963211</mass>	  
+		  <inertia>0.009127, 0.00483, 0.004722</inertia>
+		  <com>0.0, 0.0, 0.0</com>
+		  <rotorInertia>0.0000209</rotorInertia>
+		  <gearRatio>43</gearRatio>
+		  <constrained>0</constrained>
+		</jointNode>
+
+		<jointNode>
+		  <jointName>torso-pan-</jointName>
+		  <linkName>torso-base</linkName>
+		  <defaultJointPosition>0.0</defaultJointPosition>
+		  <ID>9</ID>
+		  <axis>z</axis>
+		  <type>r</type>
+		  <rot>1, 0, 0, 3.14159</rot>
+		  <!-- x pos needs to be checked -->
+		  <pos>0.07390, 0.0, 0.79264</pos>
+		  <mass>4.411</mass>
+		  <inertia>0.03898, 0.02598, 0.02305</inertia>
+		  <com>0.00012, -0.00381, 0.05228</com>
+		  <rotorInertia>0.0</rotorInertia>
+		  <gearRatio>0</gearRatio>
+		  <constrained>0</constrained>
+		  
+		  <jointNode>
+		    <jointName>torso-bend1-</jointName>
+		    <linkName>torso-lower</linkName>
+		    <defaultJointPosition>0.0</defaultJointPosition>
+		    <ID>10</ID>
+		    <axis>z</axis>
+		    <type>r</type>
+		    <rot>0.5774, 0.5774, -0.5774, 2.0944</rot>
+		    <pos>0.0, 0.0, 0.0</pos>
+		    <mass>4.934</mass>
+		    <inertia>0.02597, 0.05454, 0.03940</inertia>
+		    <com>0.04625, 0.00118, -0.00299</com>
+		    <rotorInertia>0.0</rotorInertia>
+		    <gearRatio>0</gearRatio>
+		    <constrained>0</constrained>
+		    
+		    <jointNode>
+		      <jointName>torso-bend2-</jointName>
+		      <linkName>torso-upper</linkName>
+		      <defaultJointPosition>0.0</defaultJointPosition>
+		      <ID>11</ID>
+		      <axis>z</axis>
+		      <type>r</type>
+		      <rot>1, 0, 0, 0</rot>
+		      <pos>0.1397, 0.0, 0.0</pos>
+		      <!--<mass>6.245</mass>
+			 <inertia>0.04188, 0.17534, 0.15324</inertia>
+			 <com>0.12974, 0.00870, 0.01147</com> -->
+		      <!--<mass>8.0</mass>
+			 <inertia>0.082, 0.35, 0.30</inertia>
+			 <com>0.27, 0.00870, 0.01147</com>-->
+		      <!-- esimates adding in the head -->
+		      <mass>13.845</mass>
+		      <inertia>0.84656, 0.17555, 0.15361</inertia>
+		      <com>0.31652, 0.00393, 0.00517</com>
+		      <rotorInertia>0.0</rotorInertia>
+		      <gearRatio>0</gearRatio> 
+		      <constrained>1</constrained>
+		      
+		      <jointNode>
+			<jointName>right-shoulder-straightward</jointName>
+			<linkName>right-shoulder</linkName>
+			<defaultJointPosition>0.0</defaultJointPosition>
+			<ID>12</ID>
+			<axis>z</axis>
+			<type>r</type>
+			<rot>0, 1, 0, 3.14159</rot>
+			<pos>0.2337, 0.0, -0.18465</pos>
+			<mass>2.031</mass>
+			<inertia>0.00692, 0.00473, 0.00334</inertia>
+			<com>-0.00002, -0.01095, -0.02513</com>
+			<rotorInertia>0.0000138</rotorInertia>
+			<gearRatio>120</gearRatio>
+			<constrained>0</constrained>
+			
+			<jointNode>
+			  <jointName>right-shoulder-lateral</jointName>
+			  <linkName>right-shoulder</linkName>
+			  <defaultJointPosition>0.0</defaultJointPosition>
+			  <ID>13</ID>
+			  <axis>z</axis>
+			  <type>r</type>
+			  <rot>0.5774, -0.5774, 0.5774, 2.0944</rot>
+			  <pos>0.0, 0.0, 0.0</pos>
+			  <mass>0.566</mass>
+			  <inertia>0.00197, 0.00122, 0.00220</inertia>
+			  <com>0.02633, -0.04326, -0.00094</com>
+			  <rotorInertia>0.0000138</rotorInertia>
+			  <gearRatio>100</gearRatio>
+			  <constrained>0</constrained>
+			  
+			  <jointNode>
+			    <jointName>right-shoulder-rolling</jointName>
+			    <linkName>right-upper-arm</linkName>
+			    <defaultJointPosition>0.0</defaultJointPosition>
+			    <ID>14</ID>
+			    <axis>z</axis>
+			    <type>r</type>
+			    <rot>0.5774, -0.5774, 0.5774, 2.0944</rot>
+			    <pos>0.03175, -0.27857, 0.0</pos>
+			    <mass>2.296</mass>
+			    <inertia>0.02838, 0.02859, 0.00214</inertia>
+			    <com>0.00575, -0.00177, -0.08464</com>
+			    <rotorInertia>0.0000135</rotorInertia>
+			    <gearRatio>100</gearRatio>
+			    <constrained>0</constrained>
+			    
+			    <jointNode>
+			      <jointName>right-elbow</jointName>
+			      <linkName>right-lower-arm</linkName>
+			      <defaultJointPosition>0.5</defaultJointPosition>
+			      <ID>15</ID>
+			      <axis>z</axis>
+			      <type>r</type>
+			      <rot>1, 0, 0, 1.5708</rot>
+			      <pos>-0.00502, 0.0, 0.0</pos>
+			      <mass>0.223</mass>
+			      <inertia>0.00062, 0.00042, 0.00039</inertia>
+			      <com>0.0, 0.02612, -0.00028</com>
+			      <rotorInertia>0.0000135</rotorInertia>
+			      <gearRatio>100</gearRatio>
+			      <constrained>0</constrained>
+			      
+			      <jointNode>
+				<jointName>right-wrist-z</jointName>
+				<linkName>inter-right-wrist-z</linkName>
+				<defaultJointPosition>0.0</defaultJointPosition>
+				<ID>16</ID>
+				<axis>z</axis>
+				<type>r</type>
+				<rot>1, 0, 0, -1.5708</rot>
+				<pos>0.0, 0.27747, 0.0</pos>
+				<mass>1.468</mass>
+				<inertia>0.03131, 0.03136, 0.00121</inertia>
+				<com>0.00440, 0.00012, -0.13093</com>
+				<rotorInertia>0.0000035</rotorInertia>
+				<gearRatio>100</gearRatio>
+				<constrained>0</constrained>
+				
+				<jointNode>
+				  <jointName>right-wrist-y</jointName>
+				  <linkName>inter-right-wrist-y</linkName>
+				  <defaultJointPosition>0.0</defaultJointPosition>
+				  <ID>17</ID>
+				  <axis>z</axis>
+				  <type>r</type>
+				  <rot>0.5774, -0.5774, 0.5774, 2.0944</rot>
+				  <pos>0.0, 0.0, 0.0</pos>
+				  <mass>0.278</mass>
+				  <inertia>0.00013, 0.00014, 0.00009</inertia>
+				  <com>0.00008, -0.00163, -0.00123</com>
+				  <rotorInertia>0.0000035</rotorInertia>
+				  <gearRatio>50</gearRatio>
+				  <constrained>0</constrained>
+				  
+				  <jointNode>
+				    <jointName>right-wrist-x</jointName>
+				    <linkName>right-hand</linkName>
+				    <defaultJointPosition>0.0</defaultJointPosition>
+				    <ID>18</ID>
+				    <axis>z</axis>
+				    <type>r</type>
+				    <rot>0.5774, -0.5774, 0.5774, 2.0944</rot>
+				    <pos>0.0, 0.0, 0.0</pos>
+				    <mass>0.838</mass>
+				    <!-- BEWARE for COM and inertia: we are missing the
+					 bracket frame, so here's how to switch things
+					 around:
+					 x_6 =   x_7
+					 y_6 = - z_7
+					 z_6 =   y_7
+				      -->
+				    <inertia>0.00485, 0.00081, 0.00508</inertia>
+				    <com>-0.00286, -0.10657, 0.00207</com>
+				    <rotorInertia>0.0000035</rotorInertia>
+				    <gearRatio>50</gearRatio>
+				    <constrained>0</constrained>
+				    
+				  </jointNode>
+				</jointNode>
+			      </jointNode>
+			    </jointNode>
+			  </jointNode>
+			</jointNode>
+		      </jointNode>
+		    </jointNode>
+		  </jointNode>
+		</jointNode>
+	      </jointNode>
+	    </jointNode>
+	  </jointNode>
+	</jointNode>
+      </jointNode>
+    </jointNode>
+    
+  </baseNode>
+
+</dynworld>

@@ -1,0 +1,16 @@
+- tasks:
+  - type: opspace::TestPositionOrientationTask
+    name: eeori
+    end_effector_id: 5
+    kp: [ 10.0, 10.0, 0.0, 0.0, 0.0, 10.0]
+    kd: [  1.0,  1.0, 0.0, 0.0, 0.0,  1.0]
+    goal_x: [ 1, 0, 0]
+    goal_y: [ 0, 1, 0]
+    goal_z: [ 0, 0, 1]
+    goalpos: [0, 0, 0]
+
+- skills:
+  - type: opspace::GenericSkill
+    name: generic
+    slots:
+      task: eeori

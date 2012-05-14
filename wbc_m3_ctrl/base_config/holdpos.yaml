@@ -1,0 +1,19 @@
+- tasks:
+  - type: opspace::TestBaseControlTask
+    name: eepos1
+    end_effector: 5
+    control_point: [ 0.0, 0.0, 0.0 ]
+    dt_seconds : 0.0025
+    kp: [  2.0,  2.0, 2.0 ] 
+    kd: [ 0.05, 0.05, 0.005 ]
+    maxvel: [ 0.50 ]
+    maxacc: [ 1.50 ]
+
+- skills:
+  - type: uta_opspace::BaseMultiPos
+    name: reach 
+    eepos: [ 0.00, 0.00, 0.00]
+    threshold: 0.20
+    vel_threshold: 0.10
+    slots:
+      eepos: eepos1 # first tag is the factory tag

@@ -1,0 +1,17 @@
+- tasks:
+  - type: opspace::PureJPosTrjTask
+    name: jpos
+    kp: [  2.0, 2.0, 2.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0 ]
+    kd: [  0.1 ]
+    dt_seconds: 0.0025
+    maxvel: [ 1.5 ]
+    maxacc: [ 2.0 ]
+
+- skills:
+  - type: uta_opspace::JointMultiPos
+    name: jointpos
+    jpos: [ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    threshold: 0.20
+    vel_threshold: 0.15
+    slots:
+      jpos: jpos

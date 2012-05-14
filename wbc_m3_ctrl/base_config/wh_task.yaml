@@ -1,0 +1,12 @@
+- tasks:
+  - type: opspace::TestRemoteControlTask
+    name: task
+    end_effector: 5
+    control_point: [ 0.0, 0.0, 0.0 ]
+    kp: [0.2, 0.2, 0.4]
+
+- skills:
+  - type: opspace::GenericSkill
+    name: generic
+    slots:
+      task: task

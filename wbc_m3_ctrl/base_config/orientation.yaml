@@ -1,0 +1,16 @@
+- tasks:
+  - type: opspace::OrientationTask
+    name: eeori
+    end_effector_id: 5
+    kp: 30.0
+    kd: 1.0
+    maxvel: 0.5
+    goal_x: [ 1, 0, 0]
+    goal_y: [ 0, 1, 0]
+    goal_z: [ 0, 0, 1]
+
+- skills:
+  - type: opspace::GenericSkill
+    name: generic
+    slots:
+      task: eeori
