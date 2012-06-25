@@ -8,7 +8,7 @@ default_target: all
 #=============================================================================
 # Special targets provided by cmake.
 
-# Disable implicit rules so canoncical targets will work.
+# Disable implicit rules so canonical targets will work.
 .SUFFIXES:
 
 # Remove some rules from gmake that .SUFFIXES does not remove.
@@ -38,22 +38,19 @@ CMAKE_COMMAND = /usr/bin/cmake
 # The command to remove a file.
 RM = /usr/bin/cmake -E remove -f
 
-# The program to use to edit the cache.
-CMAKE_EDIT_COMMAND = /usr/bin/ccmake
-
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/josh/whole_body_control/wbc_uta_opspace
+CMAKE_SOURCE_DIR = /home/luis/repos/software/uta-wbc-dreamer/wbc_uta_opspace
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/josh/whole_body_control/wbc_uta_opspace
+CMAKE_BINARY_DIR = /home/luis/repos/software/uta-wbc-dreamer/wbc_uta_opspace
 
 #=============================================================================
 # Targets provided globally by CMake.
 
 # Special rule for the target edit_cache
 edit_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake cache editor..."
-	/usr/bin/ccmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running interactive CMake command-line interface..."
+	/usr/bin/cmake -i .
 .PHONY : edit_cache
 
 # Special rule for the target edit_cache
@@ -72,9 +69,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/josh/whole_body_control/wbc_uta_opspace/CMakeFiles /home/josh/whole_body_control/wbc_uta_opspace/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/luis/repos/software/uta-wbc-dreamer/wbc_uta_opspace/CMakeFiles /home/luis/repos/software/uta-wbc-dreamer/wbc_uta_opspace/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/josh/whole_body_control/wbc_uta_opspace/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/luis/repos/software/uta-wbc-dreamer/wbc_uta_opspace/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -400,21 +397,6 @@ uta_opspace/JointMultiPos.s:
 .PHONY : uta_opspace/JointMultiPos.s
 
 # target to build an object file
-uta_opspace/LetterManager.o:
-	$(MAKE) -f CMakeFiles/wbc_uta_opspace.dir/build.make CMakeFiles/wbc_uta_opspace.dir/uta_opspace/LetterManager.o
-.PHONY : uta_opspace/LetterManager.o
-
-# target to preprocess a source file
-uta_opspace/LetterManager.i:
-	$(MAKE) -f CMakeFiles/wbc_uta_opspace.dir/build.make CMakeFiles/wbc_uta_opspace.dir/uta_opspace/LetterManager.i
-.PHONY : uta_opspace/LetterManager.i
-
-# target to generate assembly for a file
-uta_opspace/LetterManager.s:
-	$(MAKE) -f CMakeFiles/wbc_uta_opspace.dir/build.make CMakeFiles/wbc_uta_opspace.dir/uta_opspace/LetterManager.s
-.PHONY : uta_opspace/LetterManager.s
-
-# target to build an object file
 uta_opspace/TaskOriPostureSkill.o:
 	$(MAKE) -f CMakeFiles/wbc_uta_opspace.dir/build.make CMakeFiles/wbc_uta_opspace.dir/uta_opspace/TaskOriPostureSkill.o
 .PHONY : uta_opspace/TaskOriPostureSkill.o
@@ -428,21 +410,6 @@ uta_opspace/TaskOriPostureSkill.i:
 uta_opspace/TaskOriPostureSkill.s:
 	$(MAKE) -f CMakeFiles/wbc_uta_opspace.dir/build.make CMakeFiles/wbc_uta_opspace.dir/uta_opspace/TaskOriPostureSkill.s
 .PHONY : uta_opspace/TaskOriPostureSkill.s
-
-# target to build an object file
-uta_opspace/WriteSkill.o:
-	$(MAKE) -f CMakeFiles/wbc_uta_opspace.dir/build.make CMakeFiles/wbc_uta_opspace.dir/uta_opspace/WriteSkill.o
-.PHONY : uta_opspace/WriteSkill.o
-
-# target to preprocess a source file
-uta_opspace/WriteSkill.i:
-	$(MAKE) -f CMakeFiles/wbc_uta_opspace.dir/build.make CMakeFiles/wbc_uta_opspace.dir/uta_opspace/WriteSkill.i
-.PHONY : uta_opspace/WriteSkill.i
-
-# target to generate assembly for a file
-uta_opspace/WriteSkill.s:
-	$(MAKE) -f CMakeFiles/wbc_uta_opspace.dir/build.make CMakeFiles/wbc_uta_opspace.dir/uta_opspace/WriteSkill.s
-.PHONY : uta_opspace/WriteSkill.s
 
 # target to build an object file
 uta_opspace/strutil.o:
@@ -501,15 +468,9 @@ help:
 	@echo "... uta_opspace/JointMultiPos.o"
 	@echo "... uta_opspace/JointMultiPos.i"
 	@echo "... uta_opspace/JointMultiPos.s"
-	@echo "... uta_opspace/LetterManager.o"
-	@echo "... uta_opspace/LetterManager.i"
-	@echo "... uta_opspace/LetterManager.s"
 	@echo "... uta_opspace/TaskOriPostureSkill.o"
 	@echo "... uta_opspace/TaskOriPostureSkill.i"
 	@echo "... uta_opspace/TaskOriPostureSkill.s"
-	@echo "... uta_opspace/WriteSkill.o"
-	@echo "... uta_opspace/WriteSkill.i"
-	@echo "... uta_opspace/WriteSkill.s"
 	@echo "... uta_opspace/strutil.o"
 	@echo "... uta_opspace/strutil.i"
 	@echo "... uta_opspace/strutil.s"

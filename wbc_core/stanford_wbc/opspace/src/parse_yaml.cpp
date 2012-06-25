@@ -91,14 +91,14 @@ namespace opspace {
   
   static char const * yaml_type_name(YAML::Node const & node)
   {
-    switch (node.GetType()) {
-    case YAML::CT_NONE:
+    switch (node.Type()) {
+    case YAML::NodeType::Null:
       return "NONE";
-    case YAML::CT_SCALAR:
+    case YAML::NodeType::Scalar:
       return "SCALAR";
-    case YAML::CT_SEQUENCE:
+    case YAML::NodeType::Sequence:
       return "SEQUENCE";
-    case YAML::CT_MAP:
+    case YAML::NodeType::Map:
       return "MAP";
     }
     return "unknown";
@@ -128,7 +128,7 @@ namespace opspace {
     }
     
     if (PARAMETER_TYPE_INTEGER == param->type_) {
-      if (YAML::CT_SCALAR != value.GetType()) {
+      if (YAML::NodeType::Scalar != value.Type()) {
 	throw std::runtime_error("parameter `" + key
 				 + "' of " + com_type + " `" + com_name
 				 + "' should be scalar (integer) but is "
@@ -145,7 +145,7 @@ namespace opspace {
     }
     
     else if (PARAMETER_TYPE_STRING == param->type_) {
-      if (YAML::CT_SCALAR != value.GetType()) {
+      if (YAML::NodeType::Scalar != value.Type()) {
 	throw std::runtime_error("parameter `" + key
 				 + "' of " + com_type + " `" + com_name
 				 + "' should be scalar (string) but is "
@@ -162,7 +162,7 @@ namespace opspace {
     }
     
     else if (PARAMETER_TYPE_REAL == param->type_) {
-      if (YAML::CT_SCALAR != value.GetType()) {
+      if (YAML::NodeType::Scalar != value.Type()) {
 	throw std::runtime_error("parameter `" + key
 				 + "' of " + com_type + " `" + com_name
 				 + "' should be scalar (real) but is "
@@ -179,7 +179,7 @@ namespace opspace {
     }
     
     else if (PARAMETER_TYPE_VECTOR == param->type_) {
-      if (YAML::CT_SEQUENCE != value.GetType()) {
+      if (YAML::NodeType::Sequence != value.Type()) {
 	throw std::runtime_error("parameter `" + key
 				 + "' of " + com_type + " `" + com_name
 				 + "' should be sequence (vector) but is "
@@ -290,12 +290,12 @@ namespace opspace {
 	  std::string slot_name;
 	  std::string task_name;
 
-	  if (YAML::CT_MAP == slotlist.GetType()) {
+	  if (YAML::NodeType::Map == slotlist.Type()) {
 	    slot_it.first() >> slot_name;
 	    slot_it.second() >> task_name;
 	  }
-	  else if (YAML::CT_SEQUENCE == slotlist.GetType()) {
-	    if (YAML::CT_MAP != slot_it->GetType()) {
+	  else if (YAML::NodeType::Sequence == slotlist.Type()) {
+	    if (YAML::NodeType::Map != slot_it->Type()) {
 	      throw std::runtime_error("list item for `" + key + "' is a "
 				     + string(yaml_type_name(slotlist))
 				       + " but should be a map with one key/value pair");

@@ -35,7 +35,7 @@ namespace jspace {
   public:
     
     /** Default ctor sets \c ok=true and \c errstr="" */
-	inline Status(): ok(true), errstr("") {}
+    inline Status(): ok(true), errstr("") {}
     Status(bool ok, std::string const & errstr);
     
     inline operator bool () const { return ok; }

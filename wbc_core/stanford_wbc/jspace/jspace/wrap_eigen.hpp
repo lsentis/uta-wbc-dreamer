@@ -26,6 +26,7 @@
 #ifndef JSPACE_WRAP_EIGEN_HPP
 #define JSPACE_WRAP_EIGEN_HPP
 
+#define EIGEN2_SUPPORT_STAGE10_FULL_EIGEN2_API
 #include <Eigen/Geometry>
 #include <vector>
 

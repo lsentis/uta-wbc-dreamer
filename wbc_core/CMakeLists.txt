@@ -19,6 +19,10 @@ rosbuild_init ()
 # self-contained subdirectory.
 add_definitions (-DTIXML_USE_STL)
 
+find_package(Eigen REQUIRED)
+include_directories(${EIGEN_INCLUDE_DIRS})
+add_definitions(${EIGEN_DEFINITIONS})
+
 include_directories (
   stanford_wbc/jspace
   stanford_wbc/tao
@@ -73,7 +77,7 @@ rosbuild_add_library (wbc_core
   stanford_wbc/jspace/jspace/test/util.cpp
   stanford_wbc/jspace/jspace/test/sai_brep.cpp
   stanford_wbc/jspace/jspace/test/sai_brep_parser.cpp
-  stanford_wbc/jspace/jspace/test/model_library.cpp
+  #stanford_wbc/jspace/jspace/test/model_library.cpp
   stanford_wbc/jspace/jspace/test/sai_util.cpp
   stanford_wbc/jspace/jspace/tao_dump.cpp
 
@@ -90,6 +94,8 @@ rosbuild_add_library (wbc_core
   
   src/opspace_param_callbacks.cpp
   )
+
+target_link_libraries (wbc_core yaml-cpp)
 
 rosbuild_add_executable (checkSkillFile stanford_wbc/opspace/src/checkSkillFile.cpp)
 target_link_libraries (checkSkillFile wbc_core)

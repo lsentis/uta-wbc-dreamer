@@ -1,6 +1,6 @@
 <package>
   <description brief="A ROS wrapper for stanford-wbc.sourceforge.net">
-    This is a ROS wrapper for the Stanford Whole-Body Control
+s    This is a ROS wrapper for the Stanford Whole-Body Control
     framework from http://stanford-wbc.sourceforge.net/.
   </description>
   <author>Roland Philippsen</author>
@@ -8,9 +8,11 @@
   <review status="3rdparty" notes=""/>
   <url>http://stanford-wbc.sourceforge.net/</url>
   <depend package="roscpp"/>
-  <depend package="eigen"/>
-  <depend package="yaml_cpp"/>
   <depend package="wbc_msgs"/>
+  <!--<depend package="common_rosdeps" />-->
+  <!--<rosdep name="eigen" />-->
+  <depend package="common_rosdeps"/>
+  <rosdep name="yaml-cpp"/>
   <export>
     <!-- See comments in CMakeLists.txt for further comments on
 	 wbc_tinyxml weirdness -->
