@@ -30,7 +30,7 @@ namespace jspace {
     Jc_ = Matrix::Zero(6,9);
 
     taoDNode* node = model.getNode(5);
-    Vector wx; Vector wz; Vector r_vec; Vector ay;
+    Vector wx; Vector wz; Vector r_vec;
 
     jspace::Transform ee_transform;
     Matrix base_ori;
@@ -49,15 +49,7 @@ namespace jspace {
 
     base_ori = ee_transform.linear();
     
-    ay = Vector::Zero(3);
-    ay(1) = 1;
     wz = base_ori.block(0,2,3,1); 
-    
-    Matrix rot(Matrix::Identity(3,3));
-    rot(0,0) = cos(2*M_PI/3);
-    rot(0,1) = -sin(2*M_PI/3);
-    rot(1,0) = sin(2*M_PI/3);
-    rot(1,1) = cos(2*M_PI/3);
     
     Matrix Jfull; Matrix Jv; Matrix Jw;
 
@@ -72,8 +64,10 @@ namespace jspace {
       Jv  = Jfull.block(0, 0, 3, Jfull.cols());
       Jw  = Jfull.block(3, 0, 3, Jfull.cols());
 
-      ay = rot * ay;
-      wx = base_ori * ay;
+	  model.computeGlobalFrame(node,0,-1,0,ee_transform);
+      wx = ee_transform.translation();
+      model.computeGlobalFrame(node,0,0,0,ee_transform);
+      wx -= ee_transform.translation();
       
       Jc_.block(2*ii,0,1,9) = wx.transpose()*(Jv + r_cross * Jw);
       Jc_.block(2*ii+1,0,1,9) = wz.transpose()*(Jv + r_cross * Jw);
